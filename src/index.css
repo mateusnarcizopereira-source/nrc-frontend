@@ -1,0 +1,183 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Helvetica Neue', Arial, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background-color: #08080A;
+    color: #F4F4F8;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+@layer components {
+  /* ── Buttons ─────────────────────────────── */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    border-radius: 2px;
+    background-color: #C0392B;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.12s;
+    white-space: nowrap;
+  }
+  .btn-primary:hover:not(:disabled) { background-color: #E74C3C; }
+  .btn-primary:active:not(:disabled) { background-color: #a93226; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    border-radius: 2px;
+    background-color: transparent;
+    color: #A0A0A8;
+    border: 1px solid rgba(244, 244, 248, 0.14);
+    cursor: pointer;
+    transition: background-color 0.12s, color 0.12s, border-color 0.12s;
+    white-space: nowrap;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: rgba(244, 244, 248, 0.05);
+    color: #F4F4F8;
+    border-color: rgba(244, 244, 248, 0.25);
+  }
+  .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 600;
+    border-radius: 2px;
+    background-color: rgba(192, 57, 43, 0.15);
+    color: #E74C3C;
+    border: 1px solid rgba(192, 57, 43, 0.35);
+    cursor: pointer;
+    transition: background-color 0.12s, color 0.12s;
+  }
+  .btn-danger:hover:not(:disabled) { background-color: #C0392B; color: #fff; }
+  .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Inputs ──────────────────────────────── */
+  .input {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #F4F4F8;
+    background-color: #060608;
+    border: 1px solid rgba(244, 244, 248, 0.10);
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.12s, box-shadow 0.12s;
+  }
+  .input::placeholder { color: #3A3A42; }
+  .input:focus {
+    border-color: #C0392B;
+    box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.18);
+  }
+  textarea.input {
+    min-height: unset;
+    padding: 12px 14px;
+    resize: vertical;
+  }
+  select.input { appearance: auto; }
+  select.input option { background: #0D0D0F; color: #F4F4F8; }
+
+  /* ── Cards ───────────────────────────────── */
+  .card {
+    background-color: #0D0D0F;
+    border: 1px solid rgba(244, 244, 248, 0.06);
+    border-radius: 4px;
+    padding: 20px;
+  }
+  .card-sm {
+    background-color: #0D0D0F;
+    border: 1px solid rgba(244, 244, 248, 0.06);
+    border-radius: 4px;
+    padding: 16px;
+  }
+
+  /* ── Nav ─────────────────────────────────── */
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #52525A;
+    border-left: 2px solid transparent;
+    border-radius: 2px;
+    transition: color 0.12s, background-color 0.12s;
+    text-decoration: none;
+  }
+  .nav-link:hover {
+    color: #A0A0A8;
+    background-color: rgba(244, 244, 248, 0.04);
+  }
+  .nav-link-active {
+    color: #F4F4F8 !important;
+    border-left-color: #C0392B;
+    background-color: rgba(192, 57, 43, 0.08) !important;
+    font-weight: 600;
+  }
+
+  /* ── Metrics ─────────────────────────────── */
+  .metric-label {
+    color: #52525A;
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .metric-number {
+    font-weight: 700;
+    font-size: 32px;
+    line-height: 1;
+    color: #F4F4F8;
+  }
+
+  /* ── Badge ───────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 2px;
+  }
+}

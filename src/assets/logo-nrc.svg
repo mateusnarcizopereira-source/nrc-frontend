@@ -1,0 +1,15 @@
+<svg viewBox="0 0 220 196" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <circle cx="110" cy="78" r="32" stroke="#F4F4F8" stroke-width="1" opacity="0.30"/>
+  <circle cx="110" cy="78" r="21" stroke="#F4F4F8" stroke-width="1.5" opacity="0.60"/>
+  <line x1="110" y1="26" x2="110" y2="57" stroke="#E74C3C" stroke-width="1.5" stroke-linecap="square"/>
+  <line x1="110" y1="99" x2="110" y2="130" stroke="#E74C3C" stroke-width="1.5" stroke-linecap="square"/>
+  <line x1="58" y1="78" x2="89" y2="78" stroke="#E74C3C" stroke-width="1.5" stroke-linecap="square"/>
+  <line x1="131" y1="78" x2="162" y2="78" stroke="#E74C3C" stroke-width="1.5" stroke-linecap="square"/>
+  <circle cx="110" cy="78" r="2.5" fill="#E74C3C"/>
+  <text x="110" y="162" text-anchor="middle"
+    font-family="'Helvetica Neue', Arial, sans-serif"
+    font-size="42" font-weight="700" letter-spacing="16" fill="#F4F4F8">NRC</text>
+  <text x="110" y="182" text-anchor="middle"
+    font-family="'Helvetica Neue', Arial, sans-serif"
+    font-size="8" font-weight="500" letter-spacing="5.5" fill="#3A3A42">MIRO O FUTURO</text>
+</svg>
