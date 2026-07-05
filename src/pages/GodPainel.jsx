@@ -1,7 +1,37 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useConfig } from '../contexts/ConfigContext';
+
+function Toggle({ ativo, onChange, carregando }) {
+  return (
+    <button
+      onClick={() => onChange(!ativo)}
+      disabled={carregando}
+      aria-pressed={ativo}
+      style={{
+        width: '48px', height: '26px', borderRadius: '13px', border: 'none',
+        padding: '3px', cursor: carregando ? 'wait' : 'pointer',
+        background: ativo ? '#C0392B' : '#1E1E24',
+        transition: 'background 0.2s',
+        flexShrink: 0,
+      }}
+    >
+      <span
+        style={{
+          display: 'block', width: '20px', height: '20px', borderRadius: '50%',
+          background: '#F4F4F8',
+          transform: ativo ? 'translateX(22px)' : 'translateX(0)',
+          transition: 'transform 0.2s',
+        }}
+      />
+    </button>
+  );
+}
 
 export default function GodPainel() {
+  const { modoSolo, setModoSolo } = useConfig();
+  const [togglingModo, setTogglingModo] = useState(false);
+
   const [config, setConfig] = useState(null);
   const [fila, setFila] = useState(null);
   const [simLoading, setSimLoading] = useState(false);
@@ -20,6 +50,11 @@ export default function GodPainel() {
     setFila(filaRes.data);
   }
 
+  async function toggleModoSolo(valor) {
+    setTogglingModo(true);
+    try { await setModoSolo(valor); } finally { setTogglingModo(false); }
+  }
+
   async function salvarConfig() {
     await api.put('/sorteio/config', config);
     alert('Configuração salva e agendador atualizado!');
@@ -33,9 +68,7 @@ export default function GodPainel() {
       alert(`Sorteio "${periodo}" realizado com sucesso!`);
     } catch (e) {
       alert(e.response?.data?.erro || 'Erro ao disparar sorteio.');
-    } finally {
-      setSorteioLoading(false);
-    }
+    } finally { setSorteioLoading(false); }
   }
 
   async function simularLead() {
@@ -46,9 +79,7 @@ export default function GodPainel() {
       setSimMsg(`Lead criado: ${res.data.lead.nome} → ${res.data.lead.corretorNome || 'fila de espera'}`);
     } catch (e) {
       setSimMsg('Erro ao simular lead: ' + (e.response?.data?.erro || e.message));
-    } finally {
-      setSimLoading(false);
-    }
+    } finally { setSimLoading(false); }
   }
 
   function atualizarHorario(idx, campo, valor) {
@@ -62,8 +93,7 @@ export default function GodPainel() {
   }
 
   function removerHorario(idx) {
-    const novos = config.horarios.filter((_, i) => i !== idx);
-    setConfig({ ...config, horarios: novos });
+    setConfig({ ...config, horarios: config.horarios.filter((_, i) => i !== idx) });
   }
 
   if (!config) return (
@@ -79,11 +109,31 @@ export default function GodPainel() {
         <p className="text-sm" style={{ color: '#6A6A70' }}>Controle total do sistema NRC</p>
       </div>
 
-      {/* Configuração de sorteios */}
+      {/* ── Modo Solo ───────────────────────────────────────── */}
+      <div className="card">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h2 className="font-bold" style={{ color: '#F4F4F8' }}>Modo Solo</h2>
+            <p className="text-sm mt-1" style={{ color: '#6A6A70' }}>
+              Otimiza o sistema para uso individual: esconde fila de distribuição e check-in de equipe,
+              ativa dashboard de carteira pessoal. Desative quando contratar a equipe — nenhum dado é perdido.
+            </p>
+            <p
+              className="text-xs mt-2 font-medium"
+              style={{ color: modoSolo ? '#C0392B' : '#3A3A42' }}
+            >
+              {modoSolo ? 'MODO SOLO ATIVO' : 'Modo equipe ativo'}
+            </p>
+          </div>
+          <Toggle ativo={modoSolo} onChange={toggleModoSolo} carregando={togglingModo} />
+        </div>
+      </div>
+
+      {/* ── Configuração de sorteios ─────────────────────────── */}
       <div className="card space-y-4">
         <h2 className="font-bold" style={{ color: '#F4F4F8' }}>Horários dos sorteios</h2>
         {config.horarios.map((h, i) => (
-          <div key={i} className="flex items-center gap-3">
+          <div key={i} className="flex items-center gap-3 flex-wrap">
             <input
               className="input w-32"
               placeholder="Label (ex: manha)"
@@ -105,21 +155,17 @@ export default function GodPainel() {
             </button>
           </div>
         ))}
-        <div className="flex items-center gap-3">
-          <button onClick={adicionarHorario} className="btn-secondary text-sm">+ Horário</button>
-        </div>
+        <button onClick={adicionarHorario} className="btn-secondary text-sm">+ Horário</button>
 
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm" style={{ color: '#A0A0A8' }}>
-            <input
-              type="checkbox"
-              checked={config.distribuicaoAtiva}
-              onChange={(e) => setConfig({ ...config, distribuicaoAtiva: e.target.checked })}
-              className="rounded accent-[#C0392B]"
-            />
-            Distribuição automática ativa
-          </label>
-        </div>
+        <label className="flex items-center gap-2 text-sm" style={{ color: '#A0A0A8' }}>
+          <input
+            type="checkbox"
+            checked={config.distribuicaoAtiva}
+            onChange={(e) => setConfig({ ...config, distribuicaoAtiva: e.target.checked })}
+            className="rounded accent-[#C0392B]"
+          />
+          Distribuição automática ativa
+        </label>
 
         <div className="flex items-center gap-2">
           <label className="text-sm" style={{ color: '#A0A0A8' }}>Tolerância (min):</label>
@@ -135,10 +181,10 @@ export default function GodPainel() {
         <button onClick={salvarConfig} className="btn-primary">Salvar configuração</button>
       </div>
 
-      {/* Sorteio manual */}
+      {/* ── Sorteio manual ──────────────────────────────────── */}
       <div className="card space-y-3">
         <h2 className="font-bold" style={{ color: '#F4F4F8' }}>Disparar sorteio manualmente</h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <input
             className="input w-40"
             placeholder="Período (ex: manha)"
@@ -160,11 +206,7 @@ export default function GodPainel() {
                   <div
                     key={c.corretorId}
                     className="px-3 py-1 rounded-full text-xs font-medium"
-                    style={
-                      i === 0
-                        ? { background: '#C0392B', color: '#fff' }
-                        : { background: '#141418', color: '#6A6A70' }
-                    }
+                    style={i === 0 ? { background: '#C0392B', color: '#fff' } : { background: '#141418', color: '#6A6A70' }}
                   >
                     #{i + 1} {c.corretorNome}
                   </div>
@@ -175,7 +217,7 @@ export default function GodPainel() {
         )}
       </div>
 
-      {/* Simulador de lead */}
+      {/* ── Simulador de lead ───────────────────────────────── */}
       <div className="card space-y-3">
         <h2 className="font-bold" style={{ color: '#F4F4F8' }}>Simulador de lead Meta</h2>
         <p className="text-sm" style={{ color: '#6A6A70' }}>
@@ -185,10 +227,7 @@ export default function GodPainel() {
           {simLoading ? 'Simulando...' : '⚡ Simular lead'}
         </button>
         {simMsg && (
-          <p
-            className="text-sm font-medium"
-            style={{ color: simMsg.startsWith('Erro') ? '#E74C3C' : '#2ECC71' }}
-          >
+          <p className="text-sm font-medium" style={{ color: simMsg.startsWith('Erro') ? '#E74C3C' : '#2ECC71' }}>
             {simMsg}
           </p>
         )}

@@ -1,0 +1,25 @@
+{
+  "name": "NRC — CRM Imobiliário",
+  "short_name": "NRC",
+  "description": "CRM imobiliário Narcizo Real Estate",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08080A",
+  "theme_color": "#C0392B",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["business", "productivity"]
+}
