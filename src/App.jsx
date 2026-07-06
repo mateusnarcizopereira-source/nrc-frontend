@@ -12,6 +12,10 @@ import OperadorFila from './pages/OperadorFila';
 import PainelVisitas from './pages/PainelVisitas';
 import LeadsDescartados from './pages/LeadsDescartados';
 import MotivoDescarte from './pages/MotivoDescarte';
+import Clientes from './pages/Clientes';
+import ClienteDetalhe from './pages/ClienteDetalhe';
+import Campanhas from './pages/Campanhas';
+import CampanhaDiscador from './pages/CampanhaDiscador';
 import Layout from './components/Layout';
 import InstallBanner from './components/InstallBanner';
 
@@ -48,6 +52,10 @@ export default function App() {
               <Route path="corretores" element={<Privado perfilMinimo="gerente"><Corretores /></Privado>} />
               <Route path="relatorios" element={<Privado perfilMinimo="gerente"><Relatorios /></Privado>} />
               <Route path="god" element={<Privado perfilMinimo="editor"><GodPainel /></Privado>} />
+              <Route path="clientes" element={<Clientes />} />
+              <Route path="clientes/:id" element={<ClienteDetalhe />} />
+              <Route path="campanhas" element={<Campanhas />} />
+              <Route path="campanhas/:id/discador" element={<CampanhaDiscador />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

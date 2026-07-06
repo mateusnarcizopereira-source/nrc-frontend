@@ -52,6 +52,10 @@ function SidebarNav({ modoSolo, usuario, temPerfil, onItemClick }) {
         </>
       )}
 
+      <NavGroup label="Carteira" />
+      <NavItem to="/clientes" icon="address-book" label="Clientes" onClick={onItemClick} />
+      <NavItem to="/campanhas" icon="speakerphone" label="Oferta Ativa" onClick={onItemClick} />
+
       {temPerfil('editor') && (
         <>
           <NavGroup label="Sistema" />
