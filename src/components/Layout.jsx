@@ -106,7 +106,7 @@ export default function Layout() {
           <div>
             <p className="font-black text-base leading-none tracking-widest" style={{ color: '#F4F4F8' }}>NRC</p>
             <p className="text-[10px] mt-0.5 uppercase tracking-widest" style={{ color: '#2A2A32' }}>
-              Narcizo · Corretor
+              Serviço para Empyrus
             </p>
           </div>
         </div>
