@@ -7,6 +7,7 @@ const ICONE = {
   sorteio:         'ticket',
   tarefa_vencendo: 'clock-exclamation',
   tarefa_atrasada: 'alarm',
+  lead_parado:     'snowflake',
   info:            'bell',
 };
 

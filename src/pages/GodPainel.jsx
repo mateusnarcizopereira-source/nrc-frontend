@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useConfig } from '../contexts/ConfigContext';
+import AutomacoesPainel from '../components/AutomacoesPainel';
 
 // ── Toggle ────────────────────────────────────────────────────
 function Toggle({ ativo, onChange, carregando }) {
@@ -378,6 +379,9 @@ export default function GodPainel() {
           <Toggle ativo={modoSolo} onChange={toggleModoSolo} carregando={togglingModo} />
         </div>
       </div>
+
+      {/* ── Automações (Fase 5) ─────────────────────────────── */}
+      <AutomacoesPainel />
 
       {/* ── Gestão de usuários ──────────────────────────────── */}
       <GestaoUsuarios />
