@@ -44,6 +44,7 @@ function SidebarNav({ modoSolo, usuario, temPerfil, onItemClick }) {
       {temPerfil('gerente') && (
         <>
           <NavGroup label="Gestão" />
+          <NavItem to="/empreendimentos" icon="building-community" label="Empreendimentos" onClick={onItemClick} />
           <NavItem to="/visitas" icon="calendar-event" label="Visitas" onClick={onItemClick} />
           <NavItem to="/leads-descartados" icon="ban" label="Não Clientes" onClick={onItemClick} />
           <NavItem to="/corretores" icon="user-check" label="Corretores" onClick={onItemClick} />

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import BadgeStatus from '../components/BadgeStatus';
+import SeletorEmpreendimento from '../components/SeletorEmpreendimento';
 
 const TEMPERATURA_OPCOES = [
   { value: 'tentando_contato', label: 'Tentando Contato', temp: 'FRIO'       },
@@ -327,7 +328,12 @@ export default function LeadDetalhe() {
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Empreendimento</label>
-                    <input className="input" placeholder="Ex: Residencial Aquarela" value={visitaForm.empreendimento} onChange={(e) => setVisitaForm({ ...visitaForm, empreendimento: e.target.value })} required />
+                    <SeletorEmpreendimento
+                      value={visitaForm.empreendimento}
+                      onChange={(nome) => setVisitaForm({ ...visitaForm, empreendimento: nome })}
+                      podeCriar={['gerente', 'editor'].includes(usuario?.perfil)}
+                      placeholder="Buscar ou digitar empreendimento..."
+                    />
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Gerente da visita</label>
