@@ -15,6 +15,18 @@ const TEMPERATURA_OPCOES = [
   { value: 'venda_finalizada', label: 'Venda Finalizada', temp: 'FERVENDO'   },
 ];
 
+// Perfil de busca (Fase 2) — enums configuráveis
+const TIPOLOGIAS       = ['Studio', '1 dorm', '2 dorm', '2 dorm suíte', '3 dorm', '4+ dorm', 'Cobertura'];
+const FINALIDADES      = ['Moradia', 'Investimento', 'Não sei'];
+const FORMAS_PAGAMENTO = ['À vista', 'Financiamento', 'FGTS + Financiamento', 'Consórcio', 'Não definido'];
+const PRAZOS           = ['Imediato', '3 meses', '6 meses', '1 ano', 'Sem prazo'];
+const ORIGENS          = ['Meta Lead Ads', 'Indicação', 'Carteira própria', 'Oferta Ativa'];
+
+function fmtMoeda(v) {
+  if (v == null || v === '') return null;
+  return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+}
+
 export default function LeadDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -40,8 +52,17 @@ export default function LeadDetalhe() {
   const [descartando, setDescartando] = useState(false);
   const [motivosDescarte, setMotivosDescarte] = useState([]);
 
+  // Perfil de busca (Fase 2)
+  const [perfilAberto, setPerfilAberto] = useState(true);
+  const [editandoPerfil, setEditandoPerfil] = useState(false);
+  const [empreendimentos, setEmpreendimentos] = useState([]);
+  const [perfilForm, setPerfilForm] = useState(null);
+  const [salvandoPerfil, setSalvandoPerfil] = useState(false);
+
   const isCorretorResponsavel = usuario?.perfil === 'corretor' && lead?.corretorId === usuario?.id;
   const podeEscrever = isCorretorResponsavel;
+  // Perfil de busca: corretor responsável ou editor (cobre o Modo Solo); Diretor é só-leitura
+  const podeEditarPerfil = isCorretorResponsavel || usuario?.perfil === 'editor';
 
   useEffect(() => {
     api.get(`/leads/${id}`).then((r) => { setLead(r.data); setNotas(r.data.notas || ''); }).catch(() => navigate('/leads'));
@@ -49,7 +70,37 @@ export default function LeadDetalhe() {
     api.get(`/leads/${id}/visitas`).then((r) => setVisitas(r.data)).catch(() => {});
     api.get('/gerentes').then((r) => setGerentes(r.data)).catch(() => {});
     api.get('/motivos-descarte').then((r) => setMotivosDescarte(r.data)).catch(() => {});
+    api.get('/empreendimentos', { params: { ativo: 'true' } }).then((r) => setEmpreendimentos(r.data)).catch(() => {});
   }, [id]);
+
+  function abrirEdicaoPerfil() {
+    setPerfilForm({
+      tipologia: lead.tipologia || '',
+      finalidade: lead.finalidade || '',
+      formaPagamento: lead.formaPagamento || '',
+      prazoCompra: lead.prazoCompra || '',
+      origem: lead.origem || '',
+      empreendimentoId: lead.empreendimentoId || '',
+      faixaValor: { min: lead.faixaValor?.min ?? '', max: lead.faixaValor?.max ?? '' },
+    });
+    setEditandoPerfil(true);
+    setPerfilAberto(true);
+  }
+
+  async function salvarPerfil(e) {
+    e.preventDefault();
+    setSalvandoPerfil(true);
+    try {
+      const emp = empreendimentos.find((x) => x.id === perfilForm.empreendimentoId);
+      const payload = { ...perfilForm };
+      if (emp) payload.empreendimento = emp.nome; // mantém texto em sincronia
+      const r = await api.patch(`/leads/${id}/perfil`, payload);
+      setLead(r.data);
+      setEditandoPerfil(false);
+    } finally {
+      setSalvandoPerfil(false);
+    }
+  }
 
   async function mudarStatus(status) {
     if (!podeEscrever) return;
@@ -208,6 +259,162 @@ export default function LeadDetalhe() {
           ))}
         </dl>
       </div>
+
+      {/* Perfil de Busca (Fase 2) */}
+      {(() => {
+        const campos = [
+          { label: 'Empreendimento',    valor: lead.empreendimento, preenchido: Boolean(lead.empreendimentoId || lead.empreendimento) },
+          { label: 'Tipologia',         valor: lead.tipologia,       preenchido: Boolean(lead.tipologia) },
+          { label: 'Faixa de valor',    valor: (lead.faixaValor && (lead.faixaValor.min != null || lead.faixaValor.max != null))
+              ? [fmtMoeda(lead.faixaValor.min), fmtMoeda(lead.faixaValor.max)].filter(Boolean).join(' — ')
+              : null, preenchido: Boolean(lead.faixaValor && (lead.faixaValor.min != null || lead.faixaValor.max != null)) },
+          { label: 'Finalidade',        valor: lead.finalidade,      preenchido: Boolean(lead.finalidade) },
+          { label: 'Forma de pagamento', valor: lead.formaPagamento, preenchido: Boolean(lead.formaPagamento) },
+          { label: 'Prazo de compra',   valor: lead.prazoCompra,     preenchido: Boolean(lead.prazoCompra) },
+          { label: 'Origem',            valor: lead.origem,          preenchido: Boolean(lead.origem) },
+        ];
+        const total = campos.length;
+        const preenchidos = campos.filter((c) => c.preenchido).length;
+        const pct = Math.round((preenchidos / total) * 100);
+
+        return (
+          <div className="card">
+            {/* Cabeçalho recolhível */}
+            <div className="flex items-center justify-between gap-3">
+              <button
+                onClick={() => setPerfilAberto((v) => !v)}
+                className="flex items-center gap-2 flex-1 text-left"
+              >
+                <i className={`ti ti-chevron-${perfilAberto ? 'down' : 'right'} text-[16px]`} style={{ color: '#4A4A52' }} aria-hidden="true" />
+                <h2 className="font-semibold" style={{ color: '#F4F4F8' }}>Perfil de Busca</h2>
+                <span className="text-xs px-2 py-0.5 rounded-full"
+                  style={{ background: preenchidos === total ? 'rgba(39,174,96,0.15)' : 'rgba(244,244,248,0.06)',
+                           color: preenchidos === total ? '#27AE60' : '#6A6A70' }}>
+                  {preenchidos} de {total}
+                </span>
+              </button>
+              {podeEditarPerfil && !lead.descartado && !editandoPerfil && (
+                <button onClick={abrirEdicaoPerfil} className="text-xs px-3 py-1.5 rounded font-medium"
+                  style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8' }}>
+                  <i className="ti ti-pencil mr-1" aria-hidden="true" />Editar
+                </button>
+              )}
+            </div>
+
+            {/* Barra de completude */}
+            {perfilAberto && (
+              <div className="h-1 rounded-full mt-3 mb-1" style={{ background: 'rgba(244,244,248,0.08)' }}>
+                <div className="h-1 rounded-full transition-all"
+                  style={{ width: `${pct}%`, background: preenchidos === total ? '#27AE60' : '#C0392B' }} />
+              </div>
+            )}
+
+            {/* Corpo */}
+            {perfilAberto && !editandoPerfil && (
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mt-3">
+                {campos.map((c) => (
+                  <div key={c.label}>
+                    <dt className="text-xs uppercase tracking-wide" style={{ color: '#2A2A30' }}>{c.label}</dt>
+                    <dd className="font-medium mt-0.5">
+                      {c.preenchido ? (
+                        <span style={{ color: '#D4D4D8' }}>{c.valor}</span>
+                      ) : podeEditarPerfil && !lead.descartado ? (
+                        <button onClick={abrirEdicaoPerfil} style={{ color: '#4A4A52' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = '#C0392B')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = '#4A4A52')}>
+                          — <span className="text-xs">adicionar</span>
+                        </button>
+                      ) : (
+                        <span style={{ color: '#2A2A30' }}>—</span>
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+
+            {/* Edição */}
+            {perfilAberto && editandoPerfil && (
+              <form onSubmit={salvarPerfil} className="space-y-3 mt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Empreendimento</label>
+                    <select className="input" value={perfilForm.empreendimentoId}
+                      onChange={(e) => setPerfilForm({ ...perfilForm, empreendimentoId: e.target.value })}>
+                      <option value="">—</option>
+                      {empreendimentos.map((emp) => <option key={emp.id} value={emp.id}>{emp.nome}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Tipologia</label>
+                    <select className="input" value={perfilForm.tipologia}
+                      onChange={(e) => setPerfilForm({ ...perfilForm, tipologia: e.target.value })}>
+                      <option value="">—</option>
+                      {TIPOLOGIAS.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Faixa de valor (R$)</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input type="number" className="input" placeholder="Mínimo" value={perfilForm.faixaValor.min}
+                      onChange={(e) => setPerfilForm({ ...perfilForm, faixaValor: { ...perfilForm.faixaValor, min: e.target.value } })} />
+                    <input type="number" className="input" placeholder="Máximo" value={perfilForm.faixaValor.max}
+                      onChange={(e) => setPerfilForm({ ...perfilForm, faixaValor: { ...perfilForm.faixaValor, max: e.target.value } })} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Finalidade</label>
+                    <select className="input" value={perfilForm.finalidade}
+                      onChange={(e) => setPerfilForm({ ...perfilForm, finalidade: e.target.value })}>
+                      <option value="">—</option>
+                      {FINALIDADES.map((f) => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Forma de pagamento</label>
+                    <select className="input" value={perfilForm.formaPagamento}
+                      onChange={(e) => setPerfilForm({ ...perfilForm, formaPagamento: e.target.value })}>
+                      <option value="">—</option>
+                      {FORMAS_PAGAMENTO.map((f) => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Prazo de compra</label>
+                    <select className="input" value={perfilForm.prazoCompra}
+                      onChange={(e) => setPerfilForm({ ...perfilForm, prazoCompra: e.target.value })}>
+                      <option value="">—</option>
+                      {PRAZOS.map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Origem</label>
+                    <select className="input" value={perfilForm.origem}
+                      onChange={(e) => setPerfilForm({ ...perfilForm, origem: e.target.value })}>
+                      <option value="">—</option>
+                      {ORIGENS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button type="button" onClick={() => setEditandoPerfil(false)}
+                    className="flex-1 text-sm py-2 rounded font-medium"
+                    style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8' }}>
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={salvandoPerfil} className="flex-1 btn-primary">
+                    {salvandoPerfil ? 'Salvando...' : 'Salvar perfil'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Seletor de temperatura */}
       {podeEscrever && !lead.descartado && (
