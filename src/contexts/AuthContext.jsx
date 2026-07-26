@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
+import { conectarSocket, desconectarSocket } from '../services/socket';
 
 const AuthContext = createContext(null);
 
@@ -17,6 +18,12 @@ export function AuthProvider({ children }) {
       .finally(() => setCarregando(false));
   }, []);
 
+  // Conecta o socket e entra na room do usuário assim que soubermos quem ele é.
+  // Centralizado aqui para que a room seja (re)ativada em qualquer tela.
+  useEffect(() => {
+    if (usuario?.id) conectarSocket(usuario.id);
+  }, [usuario?.id]);
+
   async function login(email, senha) {
     const res = await api.post('/auth/login', { email, senha });
     localStorage.setItem('nrc_token', res.data.token);
@@ -25,6 +32,7 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    desconectarSocket();
     localStorage.removeItem('nrc_token');
     setUsuario(null);
   }
