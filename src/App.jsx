@@ -17,6 +17,7 @@ import ClienteDetalhe from './pages/ClienteDetalhe';
 import Campanhas from './pages/Campanhas';
 import CampanhaDiscador from './pages/CampanhaDiscador';
 import Empreendimentos from './pages/Empreendimentos';
+import Tarefas from './pages/Tarefas';
 import Layout from './components/Layout';
 import InstallBanner from './components/InstallBanner';
 
@@ -52,6 +53,7 @@ export default function App() {
               <Route path="motivos-descarte" element={<Privado perfilMinimo="gerente"><MotivoDescarte /></Privado>} />
               <Route path="corretores" element={<Privado perfilMinimo="gerente"><Corretores /></Privado>} />
               <Route path="empreendimentos" element={<Privado perfilMinimo="gerente"><Empreendimentos /></Privado>} />
+              <Route path="tarefas" element={<Privado bloqueados={SEM_LEADS}><Tarefas /></Privado>} />
               <Route path="relatorios" element={<Privado perfilMinimo="gerente"><Relatorios /></Privado>} />
               <Route path="god" element={<Privado perfilMinimo="editor"><GodPainel /></Privado>} />
               <Route path="clientes" element={<Clientes />} />

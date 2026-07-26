@@ -2,8 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { useConfig } from '../contexts/ConfigContext';
 import BadgeStatus from '../components/BadgeStatus';
 import SeletorEmpreendimento from '../components/SeletorEmpreendimento';
+import TarefaCard from '../components/TarefaCard';
+import { TarefaFormModal, ConcluirTarefaModal } from '../components/TarefaModais';
 
 const TEMPERATURA_OPCOES = [
   { value: 'tentando_contato', label: 'Tentando Contato', temp: 'FRIO'       },
@@ -31,6 +34,7 @@ export default function LeadDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { usuario, temPerfil } = useAuth();
+  const { modoSolo } = useConfig();
 
   const [lead, setLead] = useState(null);
   const [aba, setAba] = useState('timeline');
@@ -59,10 +63,36 @@ export default function LeadDetalhe() {
   const [perfilForm, setPerfilForm] = useState(null);
   const [salvandoPerfil, setSalvandoPerfil] = useState(false);
 
+  // Tarefas do lead (Fase 3)
+  const [tarefasLead, setTarefasLead] = useState([]);
+  const [modalTarefaForm, setModalTarefaForm] = useState(null); // {} | { tarefa }
+  const [modalConcluirTarefa, setModalConcluirTarefa] = useState(null);
+
   const isCorretorResponsavel = usuario?.perfil === 'corretor' && lead?.corretorId === usuario?.id;
   const podeEscrever = isCorretorResponsavel;
   // Perfil de busca: corretor responsável ou editor (cobre o Modo Solo); Diretor é só-leitura
   const podeEditarPerfil = isCorretorResponsavel || usuario?.perfil === 'editor';
+  // Tarefas: corretor/gerente/editor mexem; Diretor e Operador não
+  const podeEditarTarefa = ['corretor', 'gerente', 'editor'].includes(usuario?.perfil);
+
+  function carregarTarefas() {
+    api.get('/tarefas', { params: { leadId: id } }).then((r) => setTarefasLead(r.data)).catch(() => {});
+  }
+  function carregarComentarios() {
+    api.get(`/leads/${id}/comentarios`).then((r) => setComentarios(r.data)).catch(() => {});
+  }
+
+  function aoConcluirTarefa({ criarProxima }) {
+    setModalConcluirTarefa(null);
+    carregarTarefas();
+    carregarComentarios(); // a conclusão vira comentário na timeline
+    if (criarProxima) setModalTarefaForm({});
+  }
+
+  async function cancelarTarefa(t) {
+    if (!window.confirm(`Cancelar a tarefa "${t.titulo}"?`)) return;
+    try { await api.post(`/tarefas/${t.id}/cancelar`); carregarTarefas(); } catch {}
+  }
 
   useEffect(() => {
     api.get(`/leads/${id}`).then((r) => { setLead(r.data); setNotas(r.data.notas || ''); }).catch(() => navigate('/leads'));
@@ -71,6 +101,7 @@ export default function LeadDetalhe() {
     api.get('/gerentes').then((r) => setGerentes(r.data)).catch(() => {});
     api.get('/motivos-descarte').then((r) => setMotivosDescarte(r.data)).catch(() => {});
     api.get('/empreendimentos', { params: { ativo: 'true' } }).then((r) => setEmpreendimentos(r.data)).catch(() => {});
+    api.get('/tarefas', { params: { leadId: id } }).then((r) => setTarefasLead(r.data)).catch(() => {});
   }, [id]);
 
   function abrirEdicaoPerfil() {
@@ -442,6 +473,46 @@ export default function LeadDetalhe() {
         </div>
       )}
 
+      {/* Tarefas do lead (Fase 3) */}
+      {!lead.descartado && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold" style={{ color: '#F4F4F8' }}>
+              Tarefas
+              {tarefasLead.filter((t) => t.status === 'Pendente').length > 0 && (
+                <span className="text-xs ml-2" style={{ color: '#6A6A70' }}>
+                  {tarefasLead.filter((t) => t.status === 'Pendente').length} pendente(s)
+                </span>
+              )}
+            </h2>
+            {podeEditarTarefa && (
+              <button onClick={() => setModalTarefaForm({})} className="text-xs px-3 py-1.5 rounded font-medium"
+                style={{ background: '#C0392B', color: '#fff' }}>
+                <i className="ti ti-plus mr-1" aria-hidden="true" />Nova
+              </button>
+            )}
+          </div>
+
+          {tarefasLead.length === 0 ? (
+            <p className="text-sm text-center py-3" style={{ color: '#2A2A30' }}>Nenhuma tarefa para este lead.</p>
+          ) : (
+            <div className="space-y-2">
+              {tarefasLead.map((t) => (
+                <TarefaCard
+                  key={t.id}
+                  tarefa={t}
+                  podeEditar={podeEditarTarefa}
+                  modoSolo={modoSolo}
+                  onConcluir={setModalConcluirTarefa}
+                  onEditar={(tar) => setModalTarefaForm({ tarefa: tar })}
+                  onCancelar={cancelarTarefa}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Abas */}
       <div className="card p-0 overflow-hidden">
         <div className="flex" style={divider}>
@@ -693,6 +764,26 @@ export default function LeadDetalhe() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modais de tarefa (Fase 3) */}
+      {modalTarefaForm && lead && (
+        <TarefaFormModal
+          tarefa={modalTarefaForm.tarefa}
+          leadIdFixo={id}
+          leadNomeFixo={lead.nome}
+          usuario={usuario}
+          modoSolo={modoSolo}
+          onClose={() => setModalTarefaForm(null)}
+          onSalvo={() => { setModalTarefaForm(null); carregarTarefas(); }}
+        />
+      )}
+      {modalConcluirTarefa && (
+        <ConcluirTarefaModal
+          tarefa={modalConcluirTarefa}
+          onClose={() => setModalConcluirTarefa(null)}
+          onConcluido={aoConcluirTarefa}
+        />
       )}
     </div>
   );

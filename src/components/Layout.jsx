@@ -1,10 +1,11 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfig } from '../contexts/ConfigContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import api from '../services/api';
 import logoIcon from '../assets/logo-nrc-icon.svg';
 
-function NavItem({ to, icon, label, end = false, onClick }) {
+function NavItem({ to, icon, label, end = false, onClick, badge = 0 }) {
   return (
     <NavLink
       to={to}
@@ -14,7 +15,13 @@ function NavItem({ to, icon, label, end = false, onClick }) {
       style={{ minHeight: '44px' }}
     >
       <i className={`ti ti-${icon} text-[18px] flex-shrink-0`} aria-hidden="true" />
-      {label}
+      <span className="flex-1">{label}</span>
+      {badge > 0 && (
+        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+          style={{ background: '#C0392B', color: '#fff', minWidth: '18px', textAlign: 'center' }}>
+          {badge}
+        </span>
+      )}
     </NavLink>
   );
 }
@@ -28,13 +35,17 @@ function NavGroup({ label }) {
   );
 }
 
-function SidebarNav({ modoSolo, usuario, temPerfil, onItemClick }) {
+function SidebarNav({ modoSolo, usuario, temPerfil, onItemClick, tarefasAtrasadas = 0 }) {
   return (
     <>
       <NavItem to="/" icon="layout-dashboard" label="Dashboard" end onClick={onItemClick} />
 
       {usuario?.perfil !== 'operador' && (
         <NavItem to="/leads" icon="users" label="Leads" onClick={onItemClick} />
+      )}
+
+      {usuario?.perfil !== 'operador' && (
+        <NavItem to="/tarefas" icon="checklist" label="Tarefas" onClick={onItemClick} badge={tarefasAtrasadas} />
       )}
 
       {!modoSolo && ['operador', 'gerente'].includes(usuario?.perfil) && (
@@ -80,6 +91,15 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuAberto, setMenuAberto] = useState(false);
+  const [tarefasAtrasadas, setTarefasAtrasadas] = useState(0);
+
+  // Badge de tarefas atrasadas — atualiza ao navegar (Fase 4 traz tempo real).
+  useEffect(() => {
+    if (!usuario || usuario.perfil === 'operador') return;
+    api.get('/tarefas/contadores')
+      .then((r) => setTarefasAtrasadas(r.data.atrasadas || 0))
+      .catch(() => {});
+  }, [usuario, location.pathname]);
 
   function handleLogout() { logout(); navigate('/login'); }
 
@@ -114,7 +134,7 @@ export default function Layout() {
 
         {/* Nav */}
         <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
-          <SidebarNav modoSolo={modoSolo} usuario={usuario} temPerfil={temPerfil} />
+          <SidebarNav modoSolo={modoSolo} usuario={usuario} temPerfil={temPerfil} tarefasAtrasadas={tarefasAtrasadas} />
         </nav>
 
         {/* Usuário */}
@@ -176,6 +196,7 @@ export default function Layout() {
                 modoSolo={modoSolo}
                 usuario={usuario}
                 temPerfil={temPerfil}
+                tarefasAtrasadas={tarefasAtrasadas}
                 onItemClick={() => setMenuAberto(false)}
               />
             </nav>
