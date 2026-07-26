@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ConfigProvider } from './contexts/ConfigContext';
+import { NotificacoesProvider } from './contexts/NotificacoesContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Leads from './pages/Leads';
@@ -40,6 +41,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ConfigProvider>
+        <NotificacoesProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -65,6 +67,7 @@ export default function App() {
           </Routes>
           <InstallBanner />
         </BrowserRouter>
+        </NotificacoesProvider>
       </ConfigProvider>
     </AuthProvider>
   );

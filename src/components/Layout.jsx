@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useConfig } from '../contexts/ConfigContext';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import SinoNotificacoes from './SinoNotificacoes';
 import logoIcon from '../assets/logo-nrc-icon.svg';
 
 function NavItem({ to, icon, label, end = false, onClick, badge = 0 }) {
@@ -130,6 +131,9 @@ export default function Layout() {
               Serviço para Empyrus
             </p>
           </div>
+          <div className="ml-auto">
+            <SinoNotificacoes painelStyle={{ top: 62, left: 232 }} />
+          </div>
         </div>
 
         {/* Nav */}
@@ -173,6 +177,9 @@ export default function Layout() {
             Solo
           </span>
         )}
+        <div className="ml-auto">
+          <SinoNotificacoes painelStyle={{ top: 52, right: 8 }} />
+        </div>
       </div>
 
       {/* ── Sidebar overlay mobile (aberta via bottom nav "Menu") ── */}
