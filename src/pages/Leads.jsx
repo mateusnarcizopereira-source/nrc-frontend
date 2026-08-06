@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import BadgeStatus from '../components/BadgeStatus';
 import KanbanLeads from '../components/KanbanLeads';
+import ImportarLeadsModal from '../components/ImportarLeadsModal';
 
 const VIEW_KEY = 'nrc_leads_view';
 
@@ -23,12 +25,18 @@ export default function Leads() {
   const [busca, setBusca] = useState('');
   const [carregando, setCarregando] = useState(true);
   const [view, setView] = useState(() => localStorage.getItem(VIEW_KEY) || 'lista');
+  const [modalImportar, setModalImportar] = useState(false);
+  const { usuario } = useAuth();
+  const podeImportar = ['gerente', 'editor'].includes(usuario?.perfil);
 
   function trocarView(v) { setView(v); localStorage.setItem(VIEW_KEY, v); }
 
-  useEffect(() => {
+  function carregar() {
+    setCarregando(true);
     api.get('/leads').then((r) => setLeads(r.data)).finally(() => setCarregando(false));
-  }, []);
+  }
+
+  useEffect(() => { carregar(); }, []);
 
   const filtrados = leads.filter((l) => {
     const matchStatus = filtro === 'todos' || l.status === filtro;
@@ -46,20 +54,37 @@ export default function Leads() {
             {view === 'kanban' ? 'Quadro por estágio' : `${filtrados.length} resultado${filtrados.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        {/* Toggle Lista / Kanban */}
-        <div className="flex rounded-lg overflow-hidden flex-shrink-0" style={{ border: '1px solid rgba(244,244,248,0.10)' }}>
-          {[['lista', 'list'], ['kanban', 'layout-kanban']].map(([v, icon]) => (
-            <button key={v} onClick={() => trocarView(v)}
-              className="px-3 py-1.5 text-xs font-medium transition-colors"
-              style={view === v
-                ? { background: '#C0392B', color: '#fff' }
-                : { background: 'transparent', color: '#6A6A70' }}>
-              <i className={`ti ti-${icon} text-[14px]`} aria-hidden="true" />
-              <span className="ml-1 hidden sm:inline capitalize">{v}</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {podeImportar && (
+            <button onClick={() => setModalImportar(true)}
+              className="text-xs px-3 py-1.5 rounded font-medium"
+              style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' }}>
+              <i className="ti ti-upload mr-1" aria-hidden="true" />
+              <span className="hidden sm:inline">Importar</span>
             </button>
-          ))}
+          )}
+          {/* Toggle Lista / Kanban */}
+          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(244,244,248,0.10)' }}>
+            {[['lista', 'list'], ['kanban', 'layout-kanban']].map(([v, icon]) => (
+              <button key={v} onClick={() => trocarView(v)}
+                className="px-3 py-1.5 text-xs font-medium transition-colors"
+                style={view === v
+                  ? { background: '#C0392B', color: '#fff' }
+                  : { background: 'transparent', color: '#6A6A70' }}>
+                <i className={`ti ti-${icon} text-[14px]`} aria-hidden="true" />
+                <span className="ml-1 hidden sm:inline capitalize">{v}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      {modalImportar && (
+        <ImportarLeadsModal
+          onClose={() => setModalImportar(false)}
+          onImportado={() => { setModalImportar(false); carregar(); }}
+        />
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3">
         <input
