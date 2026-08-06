@@ -42,8 +42,13 @@ export function AuthProvider({ children }) {
     return hierarquia.indexOf(usuario?.perfil) >= hierarquia.indexOf(perfilMinimo);
   };
 
+  // Após a troca obrigatória de senha, limpa a flag localmente (sem novo login).
+  function confirmarTrocaSenha() {
+    setUsuario((u) => (u ? { ...u, precisaTrocarSenha: false } : u));
+  }
+
   return (
-    <AuthContext.Provider value={{ usuario, carregando, login, logout, temPerfil }}>
+    <AuthContext.Provider value={{ usuario, carregando, login, logout, temPerfil, confirmarTrocaSenha }}>
       {children}
     </AuthContext.Provider>
   );

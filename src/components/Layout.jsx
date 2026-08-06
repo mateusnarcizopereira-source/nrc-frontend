@@ -4,6 +4,7 @@ import { useConfig } from '../contexts/ConfigContext';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import SinoNotificacoes from './SinoNotificacoes';
+import TrocarSenha from '../pages/TrocarSenha';
 import logoIcon from '../assets/logo-nrc-icon.svg';
 
 function NavItem({ to, icon, label, end = false, onClick, badge = 0 }) {
@@ -103,6 +104,9 @@ export default function Layout() {
   }, [usuario, location.pathname]);
 
   function handleLogout() { logout(); navigate('/login'); }
+
+  // Troca de senha obrigatória (1º acesso) bloqueia toda a aplicação.
+  if (usuario?.precisaTrocarSenha) return <TrocarSenha />;
 
   const iniciais = usuario?.nome
     ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?';
