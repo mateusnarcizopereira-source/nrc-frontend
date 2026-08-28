@@ -1,38 +1,50 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 
+// Modelo atual de 7 estágios (leadService.js). 'venda_finalizada' é a única
+// etapa que corresponde ao antigo 'fechado'; o antigo 'perdido' não é mais um
+// status — virou o campo booleano `descartado`, por isso buscamos também
+// /leads-descartados (mesmo gate de perfil desta própria tela).
 export default function Relatorios() {
   const [leads, setLeads] = useState([]);
+  const [descartados, setDescartados] = useState([]);
 
-  useEffect(() => { api.get('/leads').then((r) => setLeads(r.data)); }, []);
+  useEffect(() => {
+    api.get('/leads').then((r) => setLeads(r.data));
+    api.get('/leads-descartados').then((r) => setDescartados(r.data)).catch(() => {});
+  }, []);
 
-  const porCorretor = leads.reduce((acc, lead) => {
-    const key = lead.corretorNome || 'Sem corretor';
-    if (!acc[key]) acc[key] = { total: 0, fechados: 0, perdidos: 0 };
-    acc[key].total++;
-    if (lead.status === 'fechado') acc[key].fechados++;
-    if (lead.status === 'perdido') acc[key].perdidos++;
-    return acc;
-  }, {});
+  const porCorretor = {};
+  function bucket(nome) {
+    const key = nome || 'Sem corretor';
+    if (!porCorretor[key]) porCorretor[key] = { total: 0, vendas: 0, perdidos: 0 };
+    return porCorretor[key];
+  }
+  leads.forEach((lead) => {
+    const b = bucket(lead.corretorNome);
+    b.total++;
+    if (lead.status === 'venda_finalizada') b.vendas++;
+  });
+  descartados.forEach((lead) => { bucket(lead.corretorNome).perdidos++; });
 
   const ranking = Object.entries(porCorretor)
     .map(([nome, dados]) => ({
       nome,
       ...dados,
-      conversao: dados.total > 0 ? ((dados.fechados / dados.total) * 100).toFixed(1) : '0.0',
+      conversao: dados.total > 0 ? ((dados.vendas / dados.total) * 100).toFixed(1) : '0.0',
     }))
-    .sort((a, b) => b.fechados - a.fechados);
+    .sort((a, b) => b.vendas - a.vendas);
 
   const total = leads.length;
-  const fechados = leads.filter((l) => l.status === 'fechado').length;
-  const perdidos = leads.filter((l) => l.status === 'perdido').length;
-  const taxaGeral = total > 0 ? ((fechados / total) * 100).toFixed(1) : '0.0';
+  const vendas = leads.filter((l) => l.status === 'venda_finalizada').length;
+  const perdidos = descartados.length;
+  const taxaGeral = total > 0 ? ((vendas / total) * 100).toFixed(1) : '0.0';
 
   const metricCards = [
-    { label: 'Total de leads',    value: total,         cor: '#F4F4F8'  },
-    { label: 'Fechados',          value: fechados,      cor: '#2ECC71'  },
-    { label: 'Perdidos',          value: perdidos,      cor: '#E74C3C'  },
-    { label: 'Taxa de conversão', value: `${taxaGeral}%`, cor: '#9B59B6' },
+    { label: 'Leads ativos',        value: total,           cor: '#F4F4F8'  },
+    { label: 'Vendas',              value: vendas,          cor: '#2ECC71'  },
+    { label: 'Perdidos (descarte)', value: perdidos,        cor: '#E74C3C'  },
+    { label: 'Taxa de conversão',   value: `${taxaGeral}%`, cor: '#9B59B6' },
   ];
 
   return (
@@ -57,7 +69,7 @@ export default function Relatorios() {
                 className="text-left"
                 style={{ borderBottom: '1px solid rgba(244,244,248,0.06)' }}
               >
-                {['Corretor', 'Leads', 'Fechados', 'Conversão'].map((h, i) => (
+                {['Corretor', 'Leads', 'Vendas', 'Conversão'].map((h, i) => (
                   <th
                     key={h}
                     className={`pb-2 text-xs uppercase tracking-wide ${i > 0 ? 'text-right' : ''}`}
@@ -81,7 +93,7 @@ export default function Relatorios() {
                     </div>
                   </td>
                   <td className="py-2.5 text-right" style={{ color: '#6A6A70' }}>{r.total}</td>
-                  <td className="py-2.5 text-right font-semibold" style={{ color: '#2ECC71' }}>{r.fechados}</td>
+                  <td className="py-2.5 text-right font-semibold" style={{ color: '#2ECC71' }}>{r.vendas}</td>
                   <td className="py-2.5 text-right">
                     <span
                       className="font-semibold"

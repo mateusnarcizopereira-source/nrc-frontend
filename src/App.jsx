@@ -59,7 +59,7 @@ export default function App() {
               <Route path="leads-descartados" element={<Privado perfilMinimo="gerente"><LeadsDescartados /></Privado>} />
               <Route path="operador" element={<Privado perfilMinimo="operador"><OperadorFila /></Privado>} />
               <Route path="motivos-descarte" element={<Privado perfilMinimo="gerente"><MotivoDescarte /></Privado>} />
-              <Route path="corretores" element={<Privado perfilMinimo="gerente"><Corretores /></Privado>} />
+              <Route path="corretores" element={<Privado perfisPermitidos={['editor']}><Corretores /></Privado>} />
               <Route path="empreendimentos" element={<Privado perfilMinimo="gerente"><Empreendimentos /></Privado>} />
               <Route path="tarefas" element={<Privado bloqueados={SEM_LEADS}><Tarefas /></Privado>} />
               <Route path="relatorios" element={<Privado perfilMinimo="gerente"><Relatorios /></Privado>} />
