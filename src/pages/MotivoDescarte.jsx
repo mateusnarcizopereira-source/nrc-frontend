@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function MotivoDescarte() {
+  const { usuario } = useAuth();
+  // Allow-list — espelha o backend (exigirPerfis('gerente','editor')).
+  // Diretor continua vendo a lista (perfilMinimo="gerente" na rota), só sem
+  // os botões de escrita — "vê tudo, não mexe em configuração".
+  const podeEditar = ['gerente', 'editor'].includes(usuario?.perfil);
   const [motivos, setMotivos] = useState([]);
   const [novoTexto, setNovoTexto] = useState('');
   const [adicionando, setAdicionando] = useState(false);
@@ -52,18 +58,20 @@ export default function MotivoDescarte() {
         </p>
       </div>
 
-      <form onSubmit={adicionar} className="flex gap-2">
-        <input
-          className="input flex-1"
-          placeholder="Ex: Lead virou cliente de outro produto"
-          value={novoTexto}
-          onChange={(e) => setNovoTexto(e.target.value)}
-          maxLength={100}
-        />
-        <button type="submit" disabled={adicionando || !novoTexto.trim()} className="btn-primary whitespace-nowrap">
-          {adicionando ? '...' : '+ Adicionar'}
-        </button>
-      </form>
+      {podeEditar && (
+        <form onSubmit={adicionar} className="flex gap-2">
+          <input
+            className="input flex-1"
+            placeholder="Ex: Lead virou cliente de outro produto"
+            value={novoTexto}
+            onChange={(e) => setNovoTexto(e.target.value)}
+            maxLength={100}
+          />
+          <button type="submit" disabled={adicionando || !novoTexto.trim()} className="btn-primary whitespace-nowrap">
+            {adicionando ? '...' : '+ Adicionar'}
+          </button>
+        </form>
+      )}
 
       {carregando ? (
         <div className="flex justify-center py-10">
@@ -80,21 +88,23 @@ export default function MotivoDescarte() {
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <span className="text-sm" style={{ color: '#A0A0A8' }}>{m.texto}</span>
-              <button
-                onClick={() => remover(m.id)}
-                disabled={removendo === m.id}
-                className="transition-colors flex-shrink-0"
-                style={{ color: '#2A2A30' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#E74C3C')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#2A2A30')}
-                title="Remover"
-              >
-                {removendo === m.id ? (
-                  <i className="ti ti-loader-2 animate-spin text-[16px]" style={{ color: '#E74C3C' }} aria-hidden="true" />
-                ) : (
-                  <i className="ti ti-trash text-[16px]" aria-hidden="true" />
-                )}
-              </button>
+              {podeEditar && (
+                <button
+                  onClick={() => remover(m.id)}
+                  disabled={removendo === m.id}
+                  className="transition-colors flex-shrink-0"
+                  style={{ color: '#2A2A30' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = '#E74C3C')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = '#2A2A30')}
+                  title="Remover"
+                >
+                  {removendo === m.id ? (
+                    <i className="ti ti-loader-2 animate-spin text-[16px]" style={{ color: '#E74C3C' }} aria-hidden="true" />
+                  ) : (
+                    <i className="ti ti-trash text-[16px]" aria-hidden="true" />
+                  )}
+                </button>
+              )}
             </div>
           ))}
 

@@ -66,9 +66,14 @@ function SidebarNav({ modoSolo, usuario, temPerfil, onItemClick, tarefasAtrasada
         </>
       )}
 
-      <NavGroup label="Carteira" />
-      <NavItem to="/clientes" icon="address-book" label="Clientes" onClick={onItemClick} />
-      <NavItem to="/campanhas" icon="speakerphone" label="Oferta Ativa" onClick={onItemClick} />
+      {/* Allow-list — mesma lista do backend (exigirPerfis) e do App.jsx (perfisPermitidos) */}
+      {['corretor', 'gerente', 'editor'].includes(usuario?.perfil) && (
+        <>
+          <NavGroup label="Carteira" />
+          <NavItem to="/clientes" icon="address-book" label="Clientes" onClick={onItemClick} />
+          <NavItem to="/campanhas" icon="speakerphone" label="Oferta Ativa" onClick={onItemClick} />
+        </>
+      )}
 
       {temPerfil('editor') && (
         <>

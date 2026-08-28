@@ -23,12 +23,18 @@ import Layout from './components/Layout';
 import InstallBanner from './components/InstallBanner';
 
 const SEM_LEADS = ['operador'];
+// Allow-list dos perfis que acessam Clientes/Campanhas — espelha o backend
+// (exigirPerfis('corretor','gerente','editor') em routes/index.js).
+const PODE_CLIENTES_CAMPANHAS = ['corretor', 'gerente', 'editor'];
 
-function Privado({ children, perfilMinimo, bloqueados }) {
+function Privado({ children, perfilMinimo, perfisPermitidos, bloqueados }) {
   const { usuario, carregando, temPerfil } = useAuth();
   if (carregando) return <div className="h-screen flex items-center justify-center"><Spinner /></div>;
   if (!usuario) return <Navigate to="/login" replace />;
   if (perfilMinimo && !temPerfil(perfilMinimo)) return <Navigate to="/" replace />;
+  // Allow-list explícita (nunca blacklist) — usada onde a hierarquia deixaria
+  // um perfil "acima" passar indevidamente (ex.: diretor em rota de gerente).
+  if (perfisPermitidos && !perfisPermitidos.includes(usuario.perfil)) return <Navigate to="/" replace />;
   if (bloqueados && bloqueados.includes(usuario.perfil)) return <Navigate to="/" replace />;
   return children;
 }
@@ -58,10 +64,10 @@ export default function App() {
               <Route path="tarefas" element={<Privado bloqueados={SEM_LEADS}><Tarefas /></Privado>} />
               <Route path="relatorios" element={<Privado perfilMinimo="gerente"><Relatorios /></Privado>} />
               <Route path="god" element={<Privado perfilMinimo="editor"><GodPainel /></Privado>} />
-              <Route path="clientes" element={<Clientes />} />
-              <Route path="clientes/:id" element={<ClienteDetalhe />} />
-              <Route path="campanhas" element={<Campanhas />} />
-              <Route path="campanhas/:id/discador" element={<CampanhaDiscador />} />
+              <Route path="clientes" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Clientes /></Privado>} />
+              <Route path="clientes/:id" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><ClienteDetalhe /></Privado>} />
+              <Route path="campanhas" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Campanhas /></Privado>} />
+              <Route path="campanhas/:id/discador" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><CampanhaDiscador /></Privado>} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
