@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ConfigProvider } from './contexts/ConfigContext';
 import { NotificacoesProvider } from './contexts/NotificacoesContext';
 import Login from './pages/Login';
+import Privacidade from './pages/Privacidade';
 import Dashboard from './pages/Dashboard';
 import Leads from './pages/Leads';
 import LeadDetalhe from './pages/LeadDetalhe';
@@ -51,6 +52,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/privacidade" element={<Privacidade />} />
             <Route path="/" element={<Privado><Layout /></Privado>}>
               <Route index element={<Dashboard />} />
               <Route path="leads" element={<Privado bloqueados={SEM_LEADS}><Leads /></Privado>} />
