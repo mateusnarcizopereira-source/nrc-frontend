@@ -59,6 +59,15 @@ export default function Dashboard() {
     setFila(filaRes.data?.ordem ? filaRes.data : null);
   }
 
+  // Bug corrigido: presença era só useState local (sempre false no F5,
+  // mesmo com check-in persistido no Firestore). Lê o estado real ao montar.
+  useEffect(() => {
+    if (usuario?.perfil !== 'corretor') return;
+    api.get('/sorteio/presencas')
+      .then((r) => setPresenca(r.data.some((p) => p.corretorId === usuario.id)))
+      .catch(() => {});
+  }, [usuario?.id, usuario?.perfil]);
+
   async function carregarFila() {
     const res = await api.get('/sorteio/fila').catch(() => ({ data: null }));
     setFila(res.data?.ordem ? res.data : null);
@@ -132,8 +141,8 @@ export default function Dashboard() {
             }}
             className="inline-flex items-center gap-2 px-5 font-semibold text-sm transition-all whitespace-nowrap"
           >
-            <i className={`ti ${presenca ? 'ti-circle-check' : 'ti-clock-check'} text-[18px] flex-shrink-0`} aria-hidden="true" />
-            {checkInLoading ? 'Atualizando...' : presenca ? 'Presença marcada' : 'Marcar presença'}
+            <i className={`ti ${presenca ? 'ti-logout' : 'ti-clock-check'} text-[18px] flex-shrink-0`} aria-hidden="true" />
+            {checkInLoading ? 'Atualizando...' : presenca ? 'Sair da fila' : 'Marcar presença'}
           </button>
         )}
       </div>

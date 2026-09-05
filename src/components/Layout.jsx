@@ -26,10 +26,12 @@ function itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas }) {
     itens.push({ to: '/tarefas', icon: 'checklist', label: 'Tarefas', grupo: null, badge: tarefasAtrasadas });
   }
 
-  // Fila de Corretores — operador/gerente sempre tiveram; editor entra agora
-  // (ajuste nav round 3, item 2). Corretor nunca teve acesso, não muda.
-  if (!modoSolo && (['operador', 'gerente'].includes(perfil) || perfil === 'editor')) {
-    itens.push({ to: '/operador', icon: 'arrows-sort', label: 'Fila de Corretores', grupo: null });
+  // Fila — presença ao vivo (ajuste presença/fila, item 2). Agora também
+  // visível pro corretor (allow-list igual ao backend: operador/corretor/
+  // gerente/editor; diretor bloqueado). Rótulo simplificado de "Fila de
+  // Corretores" pra só "Fila", como pedido.
+  if (!modoSolo && ['operador', 'corretor', 'gerente', 'editor'].includes(perfil)) {
+    itens.push({ to: '/operador', icon: 'arrows-sort', label: 'Fila', grupo: null });
   }
 
   if (['corretor', 'gerente', 'editor'].includes(perfil)) {

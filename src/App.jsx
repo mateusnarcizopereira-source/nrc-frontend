@@ -28,6 +28,10 @@ const SEM_LEADS = ['operador'];
 // Allow-list dos perfis que acessam Clientes/Campanhas — espelha o backend
 // (exigirPerfis('corretor','gerente','editor') em routes/index.js).
 const PODE_CLIENTES_CAMPANHAS = ['corretor', 'gerente', 'editor'];
+// Allow-list da Fila — espelha o backend (exigirPerfis em /sorteio/fila-viva).
+// Antes era perfilMinimo="operador" (hierarquia), que também deixava diretor
+// passar; agora é explícito e diretor fica de fora, como pedido.
+const PODE_FILA = ['operador', 'corretor', 'gerente', 'editor'];
 
 function Privado({ children, perfilMinimo, perfisPermitidos, bloqueados }) {
   const { usuario, carregando, temPerfil } = useAuth();
@@ -60,7 +64,7 @@ export default function App() {
               <Route path="leads/:id" element={<Privado bloqueados={SEM_LEADS}><LeadDetalhe /></Privado>} />
               <Route path="visitas" element={<Privado perfilMinimo="gerente"><PainelVisitas /></Privado>} />
               <Route path="leads-descartados" element={<Privado perfilMinimo="gerente"><LeadsDescartados /></Privado>} />
-              <Route path="operador" element={<Privado perfilMinimo="operador"><OperadorFila /></Privado>} />
+              <Route path="operador" element={<Privado perfisPermitidos={PODE_FILA}><OperadorFila /></Privado>} />
               <Route path="motivos-descarte" element={<Privado perfilMinimo="gerente"><MotivoDescarte /></Privado>} />
               <Route path="corretores" element={<Privado perfisPermitidos={['editor']}><Corretores /></Privado>} />
               {/* Leitura liberada pro corretor também (API já não restringia GET por

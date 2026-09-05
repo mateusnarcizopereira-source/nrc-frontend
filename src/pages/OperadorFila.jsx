@@ -1,240 +1,180 @@
-import { useState, useEffect } from 'react';
-import { conectarSocket } from '../services/socket';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
 function iniciais(nome) {
   return nome?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?';
 }
+function fmtHora(iso) {
+  return iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
+}
+
+const INTERVALO_MS = 30000;
 
 export default function OperadorFila() {
-  const [fila, setFila] = useState(null);
-  const [presencas, setPresencas] = useState([]);
-  const [feedback, setFeedback] = useState(null);
-  const [loading, setLoading] = useState(null);
+  const { usuario } = useAuth();
+  const podeRemover = ['gerente', 'editor'].includes(usuario?.perfil);
 
-  useEffect(() => {
-    carregarDados();
-    const socket = conectarSocket();
-    socket.on('fila_atualizada', setFila);
-    socket.on('sorteio_realizado', setFila);
-    return () => { socket.off('fila_atualizada'); socket.off('sorteio_realizado'); };
+  const [dados, setDados] = useState(null); // { presentes, ausentes }
+  const [carregando, setCarregando] = useState(true);
+  const [removendo, setRemovendo] = useState(null);
+  const [erro, setErro] = useState('');
+
+  const carregar = useCallback(async () => {
+    try {
+      const r = await api.get('/sorteio/fila-viva');
+      setDados(r.data);
+      setErro('');
+    } catch {
+      setErro('Erro ao carregar a fila.');
+    }
+    setCarregando(false);
   }, []);
 
-  async function carregarDados() {
-    const [filaRes, presRes] = await Promise.all([
-      api.get('/sorteio/fila').catch(() => ({ data: null })),
-      api.get('/sorteio/presencas').catch(() => ({ data: [] })),
-    ]);
-    setFila(filaRes.data?.ordem ? filaRes.data : null);
-    setPresencas(presRes.data);
-  }
+  useEffect(() => {
+    carregar();
+    const id = setInterval(carregar, INTERVALO_MS);
+    return () => clearInterval(id);
+  }, [carregar]);
 
-  async function voltarNaVez(corretorId) {
-    setLoading(corretorId);
-    setFeedback(null);
+  async function remover(corretorId, nome) {
+    if (!window.confirm(`Remover ${nome} da fila?`)) return;
+    setRemovendo(corretorId);
     try {
-      const res = await api.post('/sorteio/voltar-corretor', { corretorId });
-      setFeedback({ tipo: 'ok', msg: res.data.mensagem });
-      await carregarDados();
-    } catch (e) {
-      setFeedback({ tipo: 'erro', msg: e.response?.data?.erro || 'Erro ao atualizar fila.' });
-    } finally {
-      setLoading(null);
+      await api.post('/sorteio/remover-da-fila', { corretorId });
+      await carregar();
+    } catch {
+      setErro('Erro ao remover da fila.');
     }
+    setRemovendo(null);
   }
 
-  const posicaoAtual = fila ? fila.posicaoAtual % fila.ordem.length : -1;
+  const presentes = dados?.presentes || [];
+  const ausentes = dados?.ausentes || [];
 
   return (
-    <div className="space-y-5 max-w-lg">
-      <div>
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Fila de Corretores</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Sem acesso a dados de clientes</p>
+    <div className="space-y-4 max-w-2xl">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Fila</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+            Corretores presentes agora, em ordem de quem recebe o próximo lead
+          </p>
+        </div>
+        <button onClick={carregar} className="btn-secondary text-sm flex-shrink-0">
+          <i className="ti ti-refresh text-[16px]" aria-hidden="true" />
+          Atualizar
+        </button>
       </div>
 
-      {feedback && (
-        <div
-          className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium"
-          style={{
-            borderRadius: '2px',
-            ...(feedback.tipo === 'ok'
-              ? { background: 'rgba(var(--success-rgb), 0.08)', border: '1px solid rgba(var(--success-rgb), 0.2)', color: 'var(--success)' }
-              : { background: 'rgba(var(--accent-rgb), 0.08)', border: '1px solid rgba(var(--accent-rgb), 0.25)', color: 'var(--accent-hover)' }),
-          }}
-        >
-          <i className={`ti ${feedback.tipo === 'ok' ? 'ti-circle-check' : 'ti-circle-x'} text-[18px]`} aria-hidden="true" />
-          {feedback.msg}
+      {erro && (
+        <div className="text-sm px-4 py-3" style={{
+          background: 'rgba(var(--accent-rgb), 0.08)', border: '1px solid rgba(var(--accent-rgb), 0.2)',
+          color: 'var(--accent-hover)', borderRadius: '2px',
+        }}>
+          {erro}
         </div>
       )}
 
-      {/* Presentes */}
-      <div className="card">
-        <div className="flex items-center gap-2 mb-3">
-          <i className="ti ti-user-check text-[17px]" style={{ color: 'var(--accent)' }} aria-hidden="true" />
-          <h2 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
-            Check-in hoje
-            <span className="ml-1.5 font-normal" style={{ color: 'var(--text-muted)' }}>({presencas.length})</span>
-          </h2>
+      {carregando ? (
+        <div className="flex justify-center py-16">
+          <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
         </div>
-        {presencas.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Nenhum corretor fez check-in.</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {presencas.map((p) => (
-              <span
-                key={p.id}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-                style={{
-                  background: 'rgba(var(--accent-rgb), 0.10)',
-                  color: 'var(--accent-hover)',
-                  border: '1px solid rgba(var(--accent-rgb), 0.2)',
-                }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} />
-                {p.corretorNome}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
+      ) : (
+        <>
+          {/* Presentes */}
+          <div className="card p-0 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+                <i className="ti ti-user-check text-[16px]" style={{ color: 'var(--success)' }} aria-hidden="true" />
+                Presentes
+                <span className="font-normal" style={{ color: 'var(--text-muted)' }}>({presentes.length})</span>
+              </h2>
+            </div>
 
-      {/* Fila — trilha vertical */}
-      <div className="card p-0 overflow-hidden">
-        <div
-          className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' }}
-        >
-          <div className="flex items-center gap-2">
-            <i className="ti ti-arrows-sort text-[17px]" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
-            <h2 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>Fila de distribuição</h2>
-          </div>
-          {fila && (
-            <span
-              className="text-[11px] font-medium capitalize px-2.5 py-1 rounded"
-              style={{ color: 'var(--text-muted)', background: 'var(--surface-2)' }}
-            >
-              {fila.periodo}
-            </span>
-          )}
-        </div>
-
-        {!fila ? (
-          <div className="text-center py-10 px-5">
-            <i className="ti ti-calendar-off text-[32px]" style={{ color: 'var(--text-faint)' }} aria-hidden="true" />
-            <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Nenhum sorteio ativo hoje.</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>
-              Sorteios ocorrem automaticamente nos horários configurados.
-            </p>
-          </div>
-        ) : (
-          <div>
-            {[...fila.ordem.slice(posicaoAtual), ...fila.ordem.slice(0, posicaoAtual)].map((c, i) => {
-              const isProximo = i === 0;
-              const posRelativa = i + 1;
-              return (
-                <div
-                  key={c.corretorId}
-                  className="flex items-center gap-3 px-5 py-3.5 transition-colors"
-                  style={{
-                    minHeight: '64px',
-                    borderBottom: '1px solid rgba(var(--ink-rgb), 0.04)',
-                    background: isProximo ? 'rgba(var(--accent-rgb), 0.06)' : 'transparent',
-                  }}
-                >
-                  {/* Avatar */}
-                  <div
-                    className="flex-shrink-0 flex items-center justify-center rounded-full font-bold"
-                    style={
-                      isProximo
-                        ? {
-                            width: '44px', height: '44px', fontSize: '14px',
-                            background: 'var(--accent)', color: '#fff',
-                            boxShadow: '0 0 0 4px rgba(var(--accent-rgb), 0.2)',
-                          }
-                        : {
-                            width: '36px', height: '36px', fontSize: '12px',
-                            background: 'var(--surface-2)', color: 'var(--text-tertiary)',
-                          }
-                    }
-                  >
-                    {iniciais(c.corretorNome)}
-                  </div>
-
-                  {/* Nome + badge */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p
-                        className="font-semibold truncate"
-                        style={{
-                          color: isProximo ? 'var(--text)' : 'var(--text-secondary)',
-                          fontSize: isProximo ? '15px' : '14px',
-                        }}
-                      >
-                        {c.corretorNome}
-                      </p>
-                      {isProximo && (
-                        <span
-                          className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
-                          style={{ background: 'var(--accent)', color: '#fff' }}
-                        >
-                          Próximo
-                        </span>
-                      )}
+            {presentes.length === 0 ? (
+              <div className="text-center py-10 px-5">
+                <i className="ti ti-user-off text-[32px]" style={{ color: 'var(--text-faint)' }} aria-hidden="true" />
+                <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Nenhum corretor presente agora.</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>
+                  Leads novos ficam aguardando na fila de espera até alguém marcar presença.
+                </p>
+              </div>
+            ) : (
+              <div>
+                {presentes.map((c) => (
+                  <div key={c.corretorId} className="flex items-center gap-3 px-5 py-3.5 transition-colors" style={{
+                    minHeight: '64px', borderBottom: '1px solid var(--border-color)',
+                    background: c.proximo ? 'rgba(var(--accent-rgb), 0.06)' : 'transparent',
+                  }}>
+                    <div className="flex-shrink-0 flex items-center justify-center rounded-full font-bold"
+                      style={c.proximo
+                        ? { width: '44px', height: '44px', fontSize: '14px', background: 'var(--accent)', color: '#fff', boxShadow: '0 0 0 4px rgba(var(--accent-rgb), 0.2)' }
+                        : { width: '36px', height: '36px', fontSize: '12px', background: 'var(--surface-2)', color: 'var(--text-tertiary)' }}>
+                      {iniciais(c.corretorNome)}
                     </div>
-                    <p
-                      className="text-xs mt-0.5 font-medium"
-                      style={{ color: isProximo ? 'var(--accent)' : 'var(--text-faint)' }}
-                    >
-                      #{posRelativa} na fila
-                    </p>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold truncate" style={{ color: c.proximo ? 'var(--text)' : 'var(--text-secondary)', fontSize: c.proximo ? '15px' : '14px' }}>
+                          {c.corretorNome}
+                        </p>
+                        {c.proximo && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: 'var(--accent)', color: '#fff' }}>
+                            Próximo
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs mt-0.5" style={{ color: c.proximo ? 'var(--accent)' : 'var(--text-faint)' }}>
+                        Entrou às {fmtHora(c.horaCheckIn)} · {c.leadsHoje} lead{c.leadsHoje === 1 ? '' : 's'} hoje
+                      </p>
+                    </div>
+
+                    {c.proximo ? (
+                      <span className="w-2.5 h-2.5 rounded-full animate-pulse flex-shrink-0" style={{ background: 'var(--accent)' }} />
+                    ) : podeRemover ? (
+                      <button
+                        onClick={() => remover(c.corretorId, c.corretorNome)}
+                        disabled={removendo === c.corretorId}
+                        title="Remover da fila"
+                        className="p-1.5 rounded flex-shrink-0 transition-colors"
+                        style={{ color: 'var(--text-faint)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
+                      >
+                        {removendo === c.corretorId
+                          ? <i className="ti ti-loader-2 animate-spin text-[16px]" aria-hidden="true" />
+                          : <i className="ti ti-x text-[16px]" aria-hidden="true" />}
+                      </button>
+                    ) : null}
                   </div>
-
-                  {/* Ação */}
-                  {isProximo ? (
-                    <span className="w-2.5 h-2.5 rounded-full animate-pulse flex-shrink-0" style={{ background: 'var(--accent)' }} />
-                  ) : (
-                    <button
-                      onClick={() => voltarNaVez(c.corretorId)}
-                      disabled={loading === c.corretorId}
-                      style={{
-                        minHeight: '36px',
-                        borderRadius: '2px',
-                        border: '1px solid rgba(var(--accent-rgb), 0.3)',
-                        background: 'rgba(var(--accent-rgb), 0.06)',
-                        color: 'var(--accent-hover)',
-                        fontSize: '12px',
-                        padding: '0 12px',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                        fontWeight: '600',
-                        transition: 'background 0.12s',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.14)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.06)')}
-                    >
-                      {loading === c.corretorId ? (
-                        <span className="flex items-center gap-1">
-                          <i className="ti ti-loader-2 animate-spin text-[14px]" aria-hidden="true" /> ...
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1">
-                          <i className="ti ti-corner-down-left text-[14px]" aria-hidden="true" />
-                          Voltar na vez
-                        </span>
-                      )}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <button onClick={carregarDados} className="btn-secondary text-sm">
-        <i className="ti ti-refresh text-[16px]" aria-hidden="true" />
-        Atualizar
-      </button>
+          {/* Ausentes */}
+          {ausentes.length > 0 && (
+            <div className="card">
+              <h2 className="font-semibold text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--text-tertiary)' }}>
+                <i className="ti ti-user-off text-[16px]" aria-hidden="true" />
+                Ausentes
+                <span className="font-normal" style={{ color: 'var(--text-muted)' }}>({ausentes.length})</span>
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {ausentes.map((c) => (
+                  <span key={c.corretorId}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                    style={{ background: 'var(--surface-2)', color: 'var(--text-faint)', border: '1px solid var(--border-color)' }}>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--text-faint)' }} />
+                    {c.corretorNome}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
