@@ -63,7 +63,10 @@ export default function App() {
               <Route path="operador" element={<Privado perfilMinimo="operador"><OperadorFila /></Privado>} />
               <Route path="motivos-descarte" element={<Privado perfilMinimo="gerente"><MotivoDescarte /></Privado>} />
               <Route path="corretores" element={<Privado perfisPermitidos={['editor']}><Corretores /></Privado>} />
-              <Route path="empreendimentos" element={<Privado perfilMinimo="gerente"><Empreendimentos /></Privado>} />
+              {/* Leitura liberada pro corretor também (API já não restringia GET por
+                  perfil) — edição/materiais continuam só gerente/editor, resolvido
+                  dentro de Empreendimentos.jsx (podeEditar). */}
+              <Route path="empreendimentos" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Empreendimentos /></Privado>} />
               <Route path="tarefas" element={<Privado bloqueados={SEM_LEADS}><Tarefas /></Privado>} />
               <Route path="agenda" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Agenda /></Privado>} />
               <Route path="relatorios" element={<Privado perfilMinimo="gerente"><Relatorios /></Privado>} />

@@ -16,27 +16,55 @@ import logoIcon from '../assets/logo-nrc-icon.svg';
 // rolagem horizontal nem submenu fixo: perfis com mais telas (editor/
 // GOD) naturalmente empurram mais coisa pro Mais.
 function itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas }) {
+  const perfil = usuario?.perfil;
   const itens = [
     { to: '/', icon: 'layout-dashboard', label: 'Dashboard', end: true, grupo: null },
   ];
 
-  if (usuario?.perfil !== 'operador') {
+  if (perfil !== 'operador') {
     itens.push({ to: '/leads', icon: 'users', label: 'Leads', grupo: null });
     itens.push({ to: '/tarefas', icon: 'checklist', label: 'Tarefas', grupo: null, badge: tarefasAtrasadas });
   }
 
-  if (!modoSolo && ['operador', 'gerente'].includes(usuario?.perfil)) {
+  // Fila de Corretores — operador/gerente sempre tiveram; editor entra agora
+  // (ajuste nav round 3, item 2). Corretor nunca teve acesso, não muda.
+  if (!modoSolo && (['operador', 'gerente'].includes(perfil) || perfil === 'editor')) {
     itens.push({ to: '/operador', icon: 'arrows-sort', label: 'Fila de Corretores', grupo: null });
   }
 
-  // Ajuste Fase 1 (round 2): Agenda vira aba visível — corretor/gerente/editor.
-  if (['corretor', 'gerente', 'editor'].includes(usuario?.perfil)) {
+  if (['corretor', 'gerente', 'editor'].includes(perfil)) {
     itens.push({ to: '/agenda', icon: 'calendar', label: 'Agenda', grupo: null });
   }
 
-  if (temPerfil('gerente')) {
-    // Empreendimentos saiu do "Mais" e virou aba visível (ajuste Fase 1, item 5).
+  // Empreendimentos — leitura já era liberada pro corretor na API (GET sem
+  // exigirPerfis); só a aba não aparecia. Ajuste nav round 3, item 1: agora
+  // aparece pra corretor também (edição continua só gerente/editor, resolvido
+  // dentro de Empreendimentos.jsx, não muda aqui).
+  if (['corretor', 'gerente', 'editor'].includes(perfil)) {
     itens.push({ to: '/empreendimentos', icon: 'building-community', label: 'Empreendimentos', grupo: null });
+  }
+
+  // Ajuste nav round 3: corretor e gerente perdem o "Mais" inteiramente —
+  // tudo que cada um já acessava vira aba lado a lado. Editor mantém um
+  // "Mais" enxuto só com os 3 itens de configuração menos usados no dia a
+  // dia. Diretor (não citado no pedido) mantém o comportamento de sempre,
+  // sem alteração — ver bloco `else if` abaixo.
+  if (perfil === 'gerente') {
+    itens.push({ to: '/visitas', icon: 'calendar-event', label: 'Visitas', grupo: null });
+    itens.push({ to: '/leads-descartados', icon: 'ban', label: 'Não Clientes', grupo: null });
+    itens.push({ to: '/corretores', icon: 'user-check', label: 'Corretores', grupo: null });
+    itens.push({ to: '/relatorios', icon: 'chart-bar', label: 'Relatórios', grupo: null });
+    itens.push({ to: '/motivos-descarte', icon: 'adjustments-horizontal', label: 'Motivos Descarte', grupo: null });
+  } else if (perfil === 'editor') {
+    itens.push({ to: '/visitas', icon: 'calendar-event', label: 'Visitas', grupo: null });
+    itens.push({ to: '/leads-descartados', icon: 'ban', label: 'Não Clientes', grupo: null });
+    itens.push({ to: '/relatorios', icon: 'chart-bar', label: 'Relatórios', grupo: 'Configurações' });
+    itens.push({ to: '/motivos-descarte', icon: 'adjustments-horizontal', label: 'Motivos Descarte', grupo: 'Configurações' });
+    itens.push({ to: '/corretores', icon: 'user-check', label: 'Corretores', grupo: 'Configurações' });
+  } else if (temPerfil('gerente')) {
+    // Diretor (único perfil que chega aqui: acima de gerente, mas não editor)
+    // — grupo "Gestão" no Mais, exatamente como era antes deste ajuste.
+    itens.push({ to: '/empreendimentos', icon: 'building-community', label: 'Empreendimentos', grupo: 'Gestão' });
     itens.push({ to: '/visitas', icon: 'calendar-event', label: 'Visitas', grupo: 'Gestão' });
     itens.push({ to: '/leads-descartados', icon: 'ban', label: 'Não Clientes', grupo: 'Gestão' });
     itens.push({ to: '/corretores', icon: 'user-check', label: 'Corretores', grupo: 'Gestão' });
@@ -44,14 +72,16 @@ function itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas }) {
     itens.push({ to: '/motivos-descarte', icon: 'adjustments-horizontal', label: 'Motivos Descarte', grupo: 'Gestão' });
   }
 
-  // Allow-list — mesma lista do backend (exigirPerfis) e do App.jsx (perfisPermitidos)
-  if (['corretor', 'gerente', 'editor'].includes(usuario?.perfil)) {
-    itens.push({ to: '/clientes', icon: 'address-book', label: 'Clientes', grupo: 'Carteira' });
-    itens.push({ to: '/campanhas', icon: 'speakerphone', label: 'Oferta Ativa', grupo: 'Carteira' });
+  // Allow-list — mesma lista do backend (exigirPerfis) e do App.jsx (perfisPermitidos).
+  // Sempre lado a lado agora — corretor/gerente perderam o Mais, editor já
+  // não agrupava isso.
+  if (['corretor', 'gerente', 'editor'].includes(perfil)) {
+    itens.push({ to: '/clientes', icon: 'address-book', label: 'Clientes', grupo: null });
+    itens.push({ to: '/campanhas', icon: 'speakerphone', label: 'Oferta Ativa', grupo: null });
   }
 
-  if (temPerfil('editor')) {
-    itens.push({ to: '/god', icon: 'settings', label: 'GOD Painel', grupo: 'Sistema' });
+  if (perfil === 'editor') {
+    itens.push({ to: '/god', icon: 'settings', label: 'GOD Painel', grupo: null });
   }
 
   return itens;
