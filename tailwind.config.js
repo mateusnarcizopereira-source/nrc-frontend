@@ -3,6 +3,17 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'Helvetica Neue', 'Arial', 'system-ui', 'sans-serif'],
+      },
+      // Redesign (prata claro): pesos mais leves em todo o app — abaixa o teto
+      // do que "bold"/"black" significam, sem precisar trocar classe por tela.
+      fontWeight: {
+        semibold: '500',
+        bold: '600',
+        extrabold: '700',
+        black: '700',
+      },
       borderRadius: {
         none: '0',
         sm:   '2px',

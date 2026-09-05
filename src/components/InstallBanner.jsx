@@ -33,25 +33,25 @@ export default function InstallBanner() {
     >
       <div
         className="card flex items-center gap-3 shadow-2xl"
-        style={{ border: '1px solid rgba(192,57,43,0.35)', padding: '14px 16px' }}
+        style={{ border: '1px solid rgba(var(--accent-rgb), 0.35)', padding: '14px 16px' }}
       >
         <div
           className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded"
-          style={{ background: 'rgba(192,57,43,0.12)' }}
+          style={{ background: 'rgba(var(--accent-rgb), 0.12)' }}
         >
           <img src="/favicon.svg" className="w-7 h-7" alt="" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold leading-tight" style={{ color: '#F4F4F8' }}>
+          <p className="text-sm font-semibold leading-tight" style={{ color: 'var(--text)' }}>
             Instalar o NRC
           </p>
-          <p className="text-xs mt-0.5" style={{ color: '#4A4A52' }}>Acesse direto da tela inicial</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Acesse direto da tela inicial</p>
         </div>
         <div className="flex gap-2 flex-shrink-0">
           <button
             onClick={dispensar}
             className="w-8 h-8 flex items-center justify-center text-lg"
-            style={{ color: '#3A3A42' }}
+            style={{ color: 'var(--text-muted)' }}
             aria-label="Fechar"
           >
             ×

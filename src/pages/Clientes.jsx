@@ -7,11 +7,11 @@ const STATUS_OPTS = ['', 'Prospecto', 'Em negociação', 'Cliente ativo', 'Pós-
 const ORIGEM_OPTS = ['', 'Indicação', 'Evento', 'Carteira anterior', 'Rede social', 'Outro'];
 
 const BADGE = {
-  'Prospecto':       { bg: 'rgba(58,90,200,0.15)', color: '#6C8EF0' },
-  'Em negociação':   { bg: 'rgba(192,57,43,0.15)', color: '#E74C3C' },
-  'Cliente ativo':   { bg: 'rgba(39,174,96,0.15)', color: '#27AE60' },
-  'Pós-venda':       { bg: 'rgba(230,126,34,0.15)', color: '#E67E22' },
-  'Inativo':         { bg: 'rgba(58,58,66,0.3)',    color: '#6B6B78' },
+  'Prospecto':       { bg: 'rgba(var(--blue-rgb), 0.15)', color: 'var(--blue)' },
+  'Em negociação':   { bg: 'rgba(var(--accent-rgb), 0.15)', color: 'var(--accent-hover)' },
+  'Cliente ativo':   { bg: 'rgba(var(--success-rgb), 0.15)', color: 'var(--success)' },
+  'Pós-venda':       { bg: 'rgba(var(--warning-rgb), 0.15)', color: 'var(--warning)' },
+  'Inativo':         { bg: 'rgba(var(--ink-rgb), 0.3)',    color: 'var(--text-tertiary)' },
 };
 
 function Badge({ status }) {
@@ -54,8 +54,8 @@ export default function Clientes() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: '#F4F4F8' }}>Clientes</h1>
-          <p className="text-xs mt-0.5" style={{ color: '#3A3A42' }}>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>Clientes</h1>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
             {clientes.length} {clientes.length === 1 ? 'cliente' : 'clientes'}
           </p>
         </div>
@@ -63,14 +63,14 @@ export default function Clientes() {
           <button
             onClick={() => setModalImportar(true)}
             className="text-sm px-3 py-1.5 rounded font-medium transition-colors"
-            style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' }}
+            style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }}
           >
             <i className="ti ti-upload mr-1.5" />Importar
           </button>
           <button
             onClick={() => setModalNovo(true)}
             className="text-sm px-3 py-1.5 rounded font-medium"
-            style={{ background: '#C0392B', color: '#fff' }}
+            style={{ background: 'var(--accent)', color: '#fff' }}
           >
             <i className="ti ti-plus mr-1.5" />Novo
           </button>
@@ -85,17 +85,17 @@ export default function Clientes() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           className="w-full text-sm px-3 py-2 rounded outline-none"
-          style={{ background: 'rgba(244,244,248,0.05)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' }}
+          style={{ background: 'rgba(var(--ink-rgb), 0.05)', color: 'var(--text)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }}
         />
         <div className="flex gap-2">
           <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}
             className="flex-1 text-sm px-2 py-2 rounded outline-none"
-            style={{ background: 'rgba(244,244,248,0.05)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' }}>
+            style={{ background: 'rgba(var(--ink-rgb), 0.05)', color: 'var(--text)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }}>
             {STATUS_OPTS.map((o) => <option key={o} value={o}>{o || 'Todos os status'}</option>)}
           </select>
           <select value={filtroOrigem} onChange={(e) => setFiltroOrigem(e.target.value)}
             className="flex-1 text-sm px-2 py-2 rounded outline-none"
-            style={{ background: 'rgba(244,244,248,0.05)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' }}>
+            style={{ background: 'rgba(var(--ink-rgb), 0.05)', color: 'var(--text)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }}>
             {ORIGEM_OPTS.map((o) => <option key={o} value={o}>{o || 'Todas origens'}</option>)}
           </select>
         </div>
@@ -107,7 +107,7 @@ export default function Clientes() {
           <div className="w-7 h-7 border-2 border-nrc-600 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : clientes.length === 0 ? (
-        <div className="text-center py-16" style={{ color: '#3A3A42' }}>
+        <div className="text-center py-16" style={{ color: 'var(--text-muted)' }}>
           <i className="ti ti-users-off text-4xl block mb-3" />
           <p className="text-sm">Nenhum cliente encontrado</p>
         </div>
@@ -118,18 +118,18 @@ export default function Clientes() {
               key={c.id}
               onClick={() => navigate(`/clientes/${c.id}`)}
               className="w-full text-left px-4 py-3 rounded-lg transition-colors"
-              style={{ background: 'rgba(244,244,248,0.04)', border: '1px solid rgba(244,244,248,0.06)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(244,244,248,0.07)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(244,244,248,0.04)')}
+              style={{ background: 'rgba(var(--ink-rgb), 0.04)', border: '1px solid rgba(var(--ink-rgb), 0.06)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--ink-rgb), 0.07)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(var(--ink-rgb), 0.04)')}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-semibold text-sm truncate" style={{ color: '#F4F4F8' }}>{c.nome}</p>
-                  <p className="text-xs mt-0.5 truncate" style={{ color: '#3A3A42' }}>
+                  <p className="font-semibold text-sm truncate" style={{ color: 'var(--text)' }}>{c.nome}</p>
+                  <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
                     {c.telefone}{c.email ? ` · ${c.email}` : ''}
                   </p>
                   {c.empreendimentoInteresse && (
-                    <p className="text-xs mt-0.5 truncate" style={{ color: '#6B6B78' }}>{c.empreendimentoInteresse}</p>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>{c.empreendimentoInteresse}</p>
                   )}
                 </div>
                 <Badge status={c.statusCarteira} />
@@ -180,9 +180,9 @@ function NovoClienteModal({ onClose, onCriado }) {
       style={{ background: 'rgba(0,0,0,0.75)' }} onClick={onClose}>
       <form onSubmit={salvar}
         className="w-full max-w-sm rounded-xl p-5 space-y-3"
-        style={{ background: '#13131A', border: '1px solid rgba(244,244,248,0.08)' }}
+        style={{ background: 'var(--surface-3)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }}
         onClick={(e) => e.stopPropagation()}>
-        <h2 className="font-bold text-base" style={{ color: '#F4F4F8' }}>Novo cliente</h2>
+        <h2 className="font-bold text-base" style={{ color: 'var(--text)' }}>Novo cliente</h2>
 
         {[
           ['Nome *', 'nome', 'text'],
@@ -191,40 +191,40 @@ function NovoClienteModal({ onClose, onCriado }) {
           ['Empreendimento de interesse', 'empreendimentoInteresse', 'text'],
         ].map(([label, key, type]) => (
           <div key={key}>
-            <label className="text-xs block mb-1" style={{ color: '#3A3A42' }}>{label}</label>
+            <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>{label}</label>
             <input type={type} value={form[key]} onChange={(e) => set(key, e.target.value)}
               className="w-full text-sm px-3 py-2 rounded outline-none"
-              style={{ background: 'rgba(244,244,248,0.05)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' }} />
+              style={{ background: 'rgba(var(--ink-rgb), 0.05)', color: 'var(--text)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }} />
           </div>
         ))}
 
         <div>
-          <label className="text-xs block mb-1" style={{ color: '#3A3A42' }}>Origem do contato</label>
+          <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>Origem do contato</label>
           <select value={form.origemContato} onChange={(e) => set('origemContato', e.target.value)}
             className="w-full text-sm px-3 py-2 rounded outline-none"
-            style={{ background: 'rgba(244,244,248,0.05)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' }}>
+            style={{ background: 'rgba(var(--ink-rgb), 0.05)', color: 'var(--text)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }}>
             {ORIGEM_OPTS.filter(Boolean).map((o) => <option key={o}>{o}</option>)}
           </select>
         </div>
 
         {form.origemContato === 'Indicação' && (
           <div>
-            <label className="text-xs block mb-1" style={{ color: '#3A3A42' }}>Indicado por</label>
+            <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>Indicado por</label>
             <input type="text" value={form.nomeIndicador} onChange={(e) => set('nomeIndicador', e.target.value)}
               className="w-full text-sm px-3 py-2 rounded outline-none"
-              style={{ background: 'rgba(244,244,248,0.05)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' }} />
+              style={{ background: 'rgba(var(--ink-rgb), 0.05)', color: 'var(--text)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }} />
           </div>
         )}
 
         <div className="flex gap-2 pt-2">
           <button type="button" onClick={onClose}
             className="flex-1 text-sm py-2 rounded font-medium"
-            style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8' }}>
+            style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>
             Cancelar
           </button>
           <button type="submit" disabled={salvando}
             className="flex-1 text-sm py-2 rounded font-medium"
-            style={{ background: '#C0392B', color: '#fff', opacity: salvando ? 0.7 : 1 }}>
+            style={{ background: 'var(--accent)', color: '#fff', opacity: salvando ? 0.7 : 1 }}>
             {salvando ? 'Salvando…' : 'Salvar'}
           </button>
         </div>

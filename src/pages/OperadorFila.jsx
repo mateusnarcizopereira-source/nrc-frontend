@@ -48,8 +48,8 @@ export default function OperadorFila() {
   return (
     <div className="space-y-5 max-w-lg">
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: '#F4F4F8' }}>Fila de Distribuição</h1>
-        <p className="text-sm mt-0.5" style={{ color: '#6A6A70' }}>Sem acesso a dados de clientes</p>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Fila de Distribuição</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Sem acesso a dados de clientes</p>
       </div>
 
       {feedback && (
@@ -58,8 +58,8 @@ export default function OperadorFila() {
           style={{
             borderRadius: '2px',
             ...(feedback.tipo === 'ok'
-              ? { background: 'rgba(46,204,113,0.08)', border: '1px solid rgba(46,204,113,0.2)', color: '#2ECC71' }
-              : { background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.25)', color: '#E74C3C' }),
+              ? { background: 'rgba(var(--success-rgb), 0.08)', border: '1px solid rgba(var(--success-rgb), 0.2)', color: 'var(--success)' }
+              : { background: 'rgba(var(--accent-rgb), 0.08)', border: '1px solid rgba(var(--accent-rgb), 0.25)', color: 'var(--accent-hover)' }),
           }}
         >
           <i className={`ti ${feedback.tipo === 'ok' ? 'ti-circle-check' : 'ti-circle-x'} text-[18px]`} aria-hidden="true" />
@@ -70,14 +70,14 @@ export default function OperadorFila() {
       {/* Presentes */}
       <div className="card">
         <div className="flex items-center gap-2 mb-3">
-          <i className="ti ti-user-check text-[17px]" style={{ color: '#C0392B' }} aria-hidden="true" />
-          <h2 className="font-semibold text-sm" style={{ color: '#F4F4F8' }}>
+          <i className="ti ti-user-check text-[17px]" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+          <h2 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
             Check-in hoje
-            <span className="ml-1.5 font-normal" style={{ color: '#4A4A52' }}>({presencas.length})</span>
+            <span className="ml-1.5 font-normal" style={{ color: 'var(--text-muted)' }}>({presencas.length})</span>
           </h2>
         </div>
         {presencas.length === 0 ? (
-          <p className="text-sm" style={{ color: '#3A3A42' }}>Nenhum corretor fez check-in.</p>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Nenhum corretor fez check-in.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {presencas.map((p) => (
@@ -85,12 +85,12 @@ export default function OperadorFila() {
                 key={p.id}
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
                 style={{
-                  background: 'rgba(192,57,43,0.10)',
-                  color: '#E74C3C',
-                  border: '1px solid rgba(192,57,43,0.2)',
+                  background: 'rgba(var(--accent-rgb), 0.10)',
+                  color: 'var(--accent-hover)',
+                  border: '1px solid rgba(var(--accent-rgb), 0.2)',
                 }}
               >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#C0392B' }} />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} />
                 {p.corretorNome}
               </span>
             ))}
@@ -102,16 +102,16 @@ export default function OperadorFila() {
       <div className="card p-0 overflow-hidden">
         <div
           className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid rgba(244,244,248,0.06)' }}
+          style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' }}
         >
           <div className="flex items-center gap-2">
-            <i className="ti ti-arrows-sort text-[17px]" style={{ color: '#3A3A42' }} aria-hidden="true" />
-            <h2 className="font-semibold text-sm" style={{ color: '#F4F4F8' }}>Fila de distribuição</h2>
+            <i className="ti ti-arrows-sort text-[17px]" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
+            <h2 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>Fila de distribuição</h2>
           </div>
           {fila && (
             <span
               className="text-[11px] font-medium capitalize px-2.5 py-1 rounded"
-              style={{ color: '#4A4A52', background: '#141418' }}
+              style={{ color: 'var(--text-muted)', background: 'var(--surface-2)' }}
             >
               {fila.periodo}
             </span>
@@ -120,9 +120,9 @@ export default function OperadorFila() {
 
         {!fila ? (
           <div className="text-center py-10 px-5">
-            <i className="ti ti-calendar-off text-[32px]" style={{ color: '#1E1E24' }} aria-hidden="true" />
-            <p className="text-sm mt-2" style={{ color: '#3A3A42' }}>Nenhum sorteio ativo hoje.</p>
-            <p className="text-xs mt-1" style={{ color: '#1E1E24' }}>
+            <i className="ti ti-calendar-off text-[32px]" style={{ color: 'var(--text-faint)' }} aria-hidden="true" />
+            <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Nenhum sorteio ativo hoje.</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>
               Sorteios ocorrem automaticamente nos horários configurados.
             </p>
           </div>
@@ -137,8 +137,8 @@ export default function OperadorFila() {
                   className="flex items-center gap-3 px-5 py-3.5 transition-colors"
                   style={{
                     minHeight: '64px',
-                    borderBottom: '1px solid rgba(244,244,248,0.04)',
-                    background: isProximo ? 'rgba(192,57,43,0.06)' : 'transparent',
+                    borderBottom: '1px solid rgba(var(--ink-rgb), 0.04)',
+                    background: isProximo ? 'rgba(var(--accent-rgb), 0.06)' : 'transparent',
                   }}
                 >
                   {/* Avatar */}
@@ -148,12 +148,12 @@ export default function OperadorFila() {
                       isProximo
                         ? {
                             width: '44px', height: '44px', fontSize: '14px',
-                            background: '#C0392B', color: '#fff',
-                            boxShadow: '0 0 0 4px rgba(192,57,43,0.2)',
+                            background: 'var(--accent)', color: '#fff',
+                            boxShadow: '0 0 0 4px rgba(var(--accent-rgb), 0.2)',
                           }
                         : {
                             width: '36px', height: '36px', fontSize: '12px',
-                            background: '#141418', color: '#6A6A70',
+                            background: 'var(--surface-2)', color: 'var(--text-tertiary)',
                           }
                     }
                   >
@@ -166,7 +166,7 @@ export default function OperadorFila() {
                       <p
                         className="font-semibold truncate"
                         style={{
-                          color: isProximo ? '#F4F4F8' : '#A0A0A8',
+                          color: isProximo ? 'var(--text)' : 'var(--text-secondary)',
                           fontSize: isProximo ? '15px' : '14px',
                         }}
                       >
@@ -175,7 +175,7 @@ export default function OperadorFila() {
                       {isProximo && (
                         <span
                           className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
-                          style={{ background: '#C0392B', color: '#fff' }}
+                          style={{ background: 'var(--accent)', color: '#fff' }}
                         >
                           Próximo
                         </span>
@@ -183,7 +183,7 @@ export default function OperadorFila() {
                     </div>
                     <p
                       className="text-xs mt-0.5 font-medium"
-                      style={{ color: isProximo ? '#C0392B' : '#2A2A30' }}
+                      style={{ color: isProximo ? 'var(--accent)' : 'var(--text-faint)' }}
                     >
                       #{posRelativa} na fila
                     </p>
@@ -191,7 +191,7 @@ export default function OperadorFila() {
 
                   {/* Ação */}
                   {isProximo ? (
-                    <span className="w-2.5 h-2.5 rounded-full animate-pulse flex-shrink-0" style={{ background: '#C0392B' }} />
+                    <span className="w-2.5 h-2.5 rounded-full animate-pulse flex-shrink-0" style={{ background: 'var(--accent)' }} />
                   ) : (
                     <button
                       onClick={() => voltarNaVez(c.corretorId)}
@@ -199,9 +199,9 @@ export default function OperadorFila() {
                       style={{
                         minHeight: '36px',
                         borderRadius: '2px',
-                        border: '1px solid rgba(192,57,43,0.3)',
-                        background: 'rgba(192,57,43,0.06)',
-                        color: '#E74C3C',
+                        border: '1px solid rgba(var(--accent-rgb), 0.3)',
+                        background: 'rgba(var(--accent-rgb), 0.06)',
+                        color: 'var(--accent-hover)',
                         fontSize: '12px',
                         padding: '0 12px',
                         cursor: 'pointer',
@@ -209,8 +209,8 @@ export default function OperadorFila() {
                         fontWeight: '600',
                         transition: 'background 0.12s',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(192,57,43,0.14)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(192,57,43,0.06)')}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.14)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.06)')}
                     >
                       {loading === c.corretorId ? (
                         <span className="flex items-center gap-1">

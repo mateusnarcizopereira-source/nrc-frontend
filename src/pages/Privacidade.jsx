@@ -7,11 +7,11 @@ function Secao({ titulo, children }) {
     <section className="card mb-4">
       <h2
         className="text-xs font-semibold uppercase tracking-widest mb-3"
-        style={{ color: '#E74C3C' }}
+        style={{ color: 'var(--accent-hover)' }}
       >
         {titulo}
       </h2>
-      <div className="space-y-3 text-sm leading-relaxed" style={{ color: '#C4C4CC' }}>
+      <div className="space-y-3 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
         {children}
       </div>
     </section>
@@ -22,7 +22,7 @@ export default function Privacidade() {
   return (
     <div
       className="min-h-screen p-4 py-12"
-      style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(192,57,43,0.06) 0%, #08080A 55%)' }}
+      style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(var(--accent-rgb), 0.06) 0%, var(--bg) 55%)' }}
     >
       <div className="w-full max-w-2xl mx-auto">
         {/* Logo */}
@@ -31,23 +31,23 @@ export default function Privacidade() {
         </div>
 
         <div className="text-center mb-10">
-          <h1 className="text-xl font-semibold" style={{ color: '#F4F4F8' }}>
+          <h1 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>
             Política de Privacidade
           </h1>
-          <p className="text-xs mt-2 tracking-wide" style={{ color: '#5A5A64' }}>
+          <p className="text-xs mt-2 tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
             Última atualização: {ATUALIZADO_EM}
           </p>
         </div>
 
         <Secao titulo="Quem somos">
           <p>
-            O <strong style={{ color: '#F4F4F8' }}>NRC</strong> é um sistema de CRM imobiliário,
-            operado por <strong style={{ color: '#F4F4F8' }}>Narcizo</strong>, usado para
+            O <strong style={{ color: 'var(--text)' }}>NRC</strong> é um sistema de CRM imobiliário,
+            operado por <strong style={{ color: 'var(--text)' }}>Narcizo</strong>, usado para
             organizar e atender os contatos de pessoas interessadas em imóveis anunciados pela{' '}
-            <strong style={{ color: '#F4F4F8' }}>Empyrus Imobiliária</strong>, para quem o NRC
+            <strong style={{ color: 'var(--text)' }}>Empyrus Imobiliária</strong>, para quem o NRC
             presta esse serviço.
           </p>
-          <p style={{ color: '#5A5A64' }}>
+          <p style={{ color: 'var(--text-tertiary)' }}>
             Razão social: Empyrus Serviços Imobiliários LTDA · CNPJ: 57.838.464/0001-99 ·
             Endereço: Avenida Tiradentes, 960 — Andar 9, Sala 02 — Luz — São Paulo/SP — CEP
             01102-000
@@ -105,12 +105,12 @@ export default function Privacidade() {
         <Secao titulo="Como pedir a exclusão dos seus dados">
           <p>
             Para acessar, corrigir ou excluir seus dados, entre em contato pelo e-mail:{' '}
-            <strong style={{ color: '#F4F4F8' }}>empyrus.imoveis@gmail.com</strong>
+            <strong style={{ color: 'var(--text)' }}>empyrus.imoveis@gmail.com</strong>
           </p>
           <p>Respondemos e atendemos o seu pedido o quanto antes.</p>
         </Secao>
 
-        <p className="text-center mt-10 text-[11px] tracking-widest uppercase" style={{ color: '#1E1E24' }}>
+        <p className="text-center mt-10 text-[11px] tracking-widest uppercase" style={{ color: 'var(--text-faint)' }}>
           NRC — Empyrus Imobiliária
         </p>
       </div>

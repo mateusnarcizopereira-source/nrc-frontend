@@ -23,10 +23,10 @@ function agrupar(tarefas) {
 }
 
 const SECOES = [
-  { key: 'atrasadas', label: 'Atrasadas', cor: '#E74C3C' },
-  { key: 'hoje',      label: 'Hoje',      cor: '#E67E22' },
-  { key: 'semana',    label: 'Esta semana', cor: '#4a6fa5' },
-  { key: 'depois',    label: 'Depois',    cor: '#6A6A70' },
+  { key: 'atrasadas', label: 'Atrasadas', cor: 'var(--accent-hover)' },
+  { key: 'hoje',      label: 'Hoje',      cor: 'var(--warning)' },
+  { key: 'semana',    label: 'Esta semana', cor: 'var(--blue)' },
+  { key: 'depois',    label: 'Depois',    cor: 'var(--text-tertiary)' },
 ];
 
 export default function Tarefas() {
@@ -68,11 +68,11 @@ export default function Tarefas() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#F4F4F8' }}>Tarefas</h1>
-          <p className="text-sm" style={{ color: '#6A6A70' }}>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Tarefas</h1>
+          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
             {tarefas.length} pendente{tarefas.length !== 1 ? 's' : ''}
             {grupos.atrasadas.length > 0 && (
-              <span style={{ color: '#E74C3C' }}> · {grupos.atrasadas.length} atrasada{grupos.atrasadas.length !== 1 ? 's' : ''}</span>
+              <span style={{ color: 'var(--accent-hover)' }}> · {grupos.atrasadas.length} atrasada{grupos.atrasadas.length !== 1 ? 's' : ''}</span>
             )}
           </p>
         </div>
@@ -85,12 +85,12 @@ export default function Tarefas() {
 
       {carregando ? (
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-4 border-[#C0392B] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : tarefas.length === 0 ? (
         <div className="card text-center py-12">
-          <i className="ti ti-checklist text-4xl block mb-3" style={{ color: '#3A3A42' }} />
-          <p style={{ color: '#3A3A42' }}>Nenhuma tarefa pendente.</p>
+          <i className="ti ti-checklist text-4xl block mb-3" style={{ color: 'var(--text-muted)' }} />
+          <p style={{ color: 'var(--text-muted)' }}>Nenhuma tarefa pendente.</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -102,7 +102,7 @@ export default function Tarefas() {
                   <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: cor }}>
                     {label}
                   </h2>
-                  <span className="text-xs" style={{ color: '#3A3A42' }}>({grupos[key].length})</span>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>({grupos[key].length})</span>
                 </div>
                 <div className="space-y-2">
                   {grupos[key].map((t) => (

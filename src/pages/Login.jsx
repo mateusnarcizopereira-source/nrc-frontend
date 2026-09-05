@@ -35,7 +35,7 @@ export default function Login() {
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: 'radial-gradient(ellipse at 50% 35%, rgba(192,57,43,0.07) 0%, #08080A 60%)' }}
+      style={{ background: 'radial-gradient(ellipse at 50% 35%, rgba(var(--accent-rgb), 0.07) 0%, var(--bg) 60%)' }}
     >
       <div className="w-full max-w-sm">
         {/* Logo */}
@@ -47,12 +47,12 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div
             className="space-y-4 pt-8"
-            style={{ borderTop: '1px solid rgba(244,244,248,0.07)' }}
+            style={{ borderTop: '1px solid rgba(var(--ink-rgb), 0.07)' }}
           >
             <div>
               <label
                 className="block text-xs font-semibold uppercase tracking-widest mb-2"
-                style={{ color: '#3A3A42' }}
+                style={{ color: 'var(--text-muted)' }}
               >
                 E-mail
               </label>
@@ -69,7 +69,7 @@ export default function Login() {
             <div>
               <label
                 className="block text-xs font-semibold uppercase tracking-widest mb-2"
-                style={{ color: '#3A3A42' }}
+                style={{ color: 'var(--text-muted)' }}
               >
                 Senha
               </label>
@@ -88,10 +88,10 @@ export default function Login() {
             <div
               className="text-sm px-4 py-3"
               style={{
-                background: 'rgba(192,57,43,0.10)',
-                border: '1px solid rgba(192,57,43,0.28)',
+                background: 'rgba(var(--accent-rgb), 0.10)',
+                border: '1px solid rgba(var(--accent-rgb), 0.28)',
                 borderRadius: '2px',
-                color: '#E74C3C',
+                color: 'var(--accent-hover)',
               }}
             >
               {erro}
@@ -102,14 +102,14 @@ export default function Login() {
             <div
               className="text-sm px-4 py-3"
               style={{
-                background: 'rgba(180,140,20,0.08)',
-                border: '1px solid rgba(180,140,20,0.22)',
+                background: 'rgba(var(--amber-rgb), 0.08)',
+                border: '1px solid rgba(var(--amber-rgb), 0.22)',
                 borderRadius: '2px',
-                color: '#B8A020',
+                color: 'var(--amber)',
               }}
             >
               <p className="font-semibold">Conectando ao servidor...</p>
-              <p className="mt-0.5" style={{ color: '#8A7818' }}>
+              <p className="mt-0.5" style={{ color: 'var(--amber)' }}>
                 O servidor pode demorar até 1 minuto para responder na primeira vez do dia. Aguarde.
               </p>
             </div>
@@ -120,7 +120,7 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-center mt-10 text-[11px] tracking-widest uppercase" style={{ color: '#1E1E24' }}>
+        <p className="text-center mt-10 text-[11px] tracking-widest uppercase" style={{ color: 'var(--text-faint)' }}>
           NRC v1.0 — Acesso restrito
         </p>
       </div>

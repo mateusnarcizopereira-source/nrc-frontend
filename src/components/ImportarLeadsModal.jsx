@@ -79,8 +79,8 @@ export default function ImportarLeadsModal({ onClose, onImportado }) {
     } catch { setImportando(false); }
   }
 
-  const cardStyle = { background: '#13131A', border: '1px solid rgba(244,244,248,0.08)' };
-  const inputStyle = { background: 'rgba(244,244,248,0.05)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' };
+  const cardStyle = { background: 'var(--surface-3)', border: '1px solid rgba(var(--ink-rgb), 0.08)' };
+  const inputStyle = { background: 'rgba(var(--ink-rgb), 0.05)', color: 'var(--text)', border: '1px solid rgba(var(--ink-rgb), 0.08)' };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
@@ -89,18 +89,18 @@ export default function ImportarLeadsModal({ onClose, onImportado }) {
         style={cardStyle} onClick={(e) => e.stopPropagation()}>
 
         <div className="flex items-center justify-between">
-          <h2 className="font-bold text-base" style={{ color: '#F4F4F8' }}>Importar leads (CSV da Meta)</h2>
-          <button onClick={onClose} style={{ color: '#3A3A42' }}><i className="ti ti-x text-lg" /></button>
+          <h2 className="font-bold text-base" style={{ color: 'var(--text)' }}>Importar leads (CSV da Meta)</h2>
+          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}><i className="ti ti-x text-lg" /></button>
         </div>
 
         {etapa === 'upload' && (
           <div className="space-y-4">
-            <p className="text-sm" style={{ color: '#6B6B78' }}>
+            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
               Selecione o CSV/Excel exportado do Gerenciador de Anúncios (Lead Ads).
             </p>
             <button onClick={() => inputRef.current?.click()}
               className="w-full flex flex-col items-center gap-2 py-8 rounded-lg border-2 border-dashed"
-              style={{ borderColor: 'rgba(244,244,248,0.1)', color: '#3A3A42' }}>
+              style={{ borderColor: 'rgba(var(--ink-rgb), 0.1)', color: 'var(--text-muted)' }}>
               <i className="ti ti-upload text-2xl" />
               <span className="text-sm">Clique para selecionar arquivo</span>
             </button>
@@ -110,12 +110,12 @@ export default function ImportarLeadsModal({ onClose, onImportado }) {
 
         {etapa === 'mapear' && (
           <div className="space-y-3">
-            <p className="text-xs" style={{ color: '#6B6B78' }}>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               {linhas.length} linhas detectadas. Confira o mapeamento das colunas:
             </p>
             {CAMPOS.map(({ key, label }) => (
               <div key={key}>
-                <label className="text-xs block mb-1" style={{ color: '#3A3A42' }}>{label}</label>
+                <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>{label}</label>
                 <select value={mapeamento[key] ?? ''}
                   onChange={(e) => setMapeamento((m) => ({ ...m, [key]: e.target.value }))}
                   className="w-full text-sm px-2 py-2 rounded outline-none" style={inputStyle}>
@@ -126,10 +126,10 @@ export default function ImportarLeadsModal({ onClose, onImportado }) {
             ))}
             <div className="flex gap-2 pt-2">
               <button onClick={() => setEtapa('upload')} className="flex-1 text-sm py-2 rounded font-medium"
-                style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8' }}>Voltar</button>
+                style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>Voltar</button>
               <button onClick={construirPreview} disabled={!mapeamento.nome || !mapeamento.telefone}
                 className="flex-1 text-sm py-2 rounded font-medium"
-                style={{ background: '#C0392B', color: '#fff', opacity: (!mapeamento.nome || !mapeamento.telefone) ? 0.5 : 1 }}>
+                style={{ background: 'var(--accent)', color: '#fff', opacity: (!mapeamento.nome || !mapeamento.telefone) ? 0.5 : 1 }}>
                 Pré-visualizar
               </button>
             </div>
@@ -138,24 +138,24 @@ export default function ImportarLeadsModal({ onClose, onImportado }) {
 
         {etapa === 'confirmar' && (
           <div className="space-y-3">
-            <p className="text-xs" style={{ color: '#6B6B78' }}>Primeiros {preview.length} de {linhas.length}:</p>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Primeiros {preview.length} de {linhas.length}:</p>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {preview.map((c, i) => (
                 <div key={i} className="px-3 py-2 rounded text-xs"
-                  style={{ background: 'rgba(244,244,248,0.04)', border: '1px solid rgba(244,244,248,0.05)' }}>
-                  <p style={{ color: '#F4F4F8' }}>{c.nome || '(sem nome)'}</p>
-                  <p style={{ color: '#3A3A42' }}>{c.telefone} {c.empreendimento && `· ${c.empreendimento}`}</p>
+                  style={{ background: 'rgba(var(--ink-rgb), 0.04)', border: '1px solid rgba(var(--ink-rgb), 0.05)' }}>
+                  <p style={{ color: 'var(--text)' }}>{c.nome || '(sem nome)'}</p>
+                  <p style={{ color: 'var(--text-muted)' }}>{c.telefone} {c.empreendimento && `· ${c.empreendimento}`}</p>
                 </div>
               ))}
             </div>
-            <p className="text-xs" style={{ color: '#6B6B78' }}>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               Leads com telefone ou e-mail já existentes são ignorados. Entram sem corretor (para distribuição).
             </p>
             <div className="flex gap-2">
               <button onClick={() => setEtapa('mapear')} className="flex-1 text-sm py-2 rounded font-medium"
-                style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8' }}>Voltar</button>
+                style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>Voltar</button>
               <button onClick={importar} disabled={importando} className="flex-1 text-sm py-2 rounded font-medium"
-                style={{ background: '#C0392B', color: '#fff', opacity: importando ? 0.7 : 1 }}>
+                style={{ background: 'var(--accent)', color: '#fff', opacity: importando ? 0.7 : 1 }}>
                 {importando ? 'Importando…' : `Importar ${linhas.length}`}
               </button>
             </div>
@@ -164,20 +164,20 @@ export default function ImportarLeadsModal({ onClose, onImportado }) {
 
         {etapa === 'resultado' && resultado && (
           <div className="space-y-4 text-center">
-            <i className="ti ti-check text-4xl block" style={{ color: '#27AE60' }} />
+            <i className="ti ti-check text-4xl block" style={{ color: 'var(--success)' }} />
             <div className="space-y-1 text-sm">
-              <p style={{ color: '#F4F4F8' }}>
-                <span className="font-bold" style={{ color: '#27AE60' }}>{resultado.importados}</span> leads importados
+              <p style={{ color: 'var(--text)' }}>
+                <span className="font-bold" style={{ color: 'var(--success)' }}>{resultado.importados}</span> leads importados
               </p>
               {resultado.duplicatas > 0 && (
-                <p style={{ color: '#3A3A42' }}>{resultado.duplicatas} duplicata(s) ignorada(s)</p>
+                <p style={{ color: 'var(--text-muted)' }}>{resultado.duplicatas} duplicata(s) ignorada(s)</p>
               )}
               {resultado.invalidos > 0 && (
-                <p style={{ color: '#3A3A42' }}>{resultado.invalidos} inválido(s) (sem nome/telefone)</p>
+                <p style={{ color: 'var(--text-muted)' }}>{resultado.invalidos} inválido(s) (sem nome/telefone)</p>
               )}
             </div>
             <button onClick={onImportado} className="w-full text-sm py-2 rounded font-medium"
-              style={{ background: '#C0392B', color: '#fff' }}>Concluir</button>
+              style={{ background: 'var(--accent)', color: '#fff' }}>Concluir</button>
           </div>
         )}
       </div>

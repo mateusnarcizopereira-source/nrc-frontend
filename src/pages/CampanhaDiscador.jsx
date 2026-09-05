@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const RESULTADOS = [
-  { key: 'nao_atendeu',    label: 'Não atendeu',   icon: 'phone-off',      color: '#6B6B78' },
-  { key: 'sem_interesse',  label: 'Sem interesse',  icon: 'thumb-down',     color: '#E74C3C' },
-  { key: 'interessado',    label: 'Interessado',    icon: 'star',           color: '#F39C12' },
-  { key: 'agendou_visita', label: 'Agendou visita', icon: 'calendar-check', color: '#27AE60' },
-  { key: 'pulado',         label: 'Pular',          icon: 'chevron-right',  color: '#3A3A42' },
+  { key: 'nao_atendeu',    label: 'Não atendeu',   icon: 'phone-off',      color: 'var(--text-tertiary)' },
+  { key: 'sem_interesse',  label: 'Sem interesse',  icon: 'thumb-down',     color: 'var(--accent-hover)' },
+  { key: 'interessado',    label: 'Interessado',    icon: 'star',           color: 'var(--warning)' },
+  { key: 'agendou_visita', label: 'Agendou visita', icon: 'calendar-check', color: 'var(--success)' },
+  { key: 'pulado',         label: 'Pular',          icon: 'chevron-right',  color: 'var(--text-muted)' },
 ];
 
 export default function CampanhaDiscador() {
@@ -83,22 +83,22 @@ export default function CampanhaDiscador() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <button onClick={() => navigate('/campanhas')}
-            className="flex items-center gap-1 text-xs mb-1" style={{ color: '#3A3A42' }}>
+            className="flex items-center gap-1 text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
             <i className="ti ti-arrow-left" />Campanhas
           </button>
-          <h1 className="text-lg font-bold leading-tight" style={{ color: '#F4F4F8' }}>{campanha.nome}</h1>
+          <h1 className="text-lg font-bold leading-tight" style={{ color: 'var(--text)' }}>{campanha.nome}</h1>
         </div>
         {!encerrada && (
           <div className="flex gap-2 flex-shrink-0">
             <button onClick={togglePausa}
               className="text-xs px-2.5 py-1.5 rounded font-medium"
-              style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8' }}>
+              style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>
               <i className={`ti ti-${campanha.status === 'pausada' ? 'player-play' : 'player-pause'} mr-1`} />
               {campanha.status === 'pausada' ? 'Retomar' : 'Pausar'}
             </button>
             <button onClick={encerrar}
               className="text-xs px-2.5 py-1.5 rounded"
-              style={{ background: 'rgba(192,57,43,0.1)', color: '#E74C3C' }}>
+              style={{ background: 'rgba(var(--accent-rgb), 0.1)', color: 'var(--accent-hover)' }}>
               <i className="ti ti-square" />
             </button>
           </div>
@@ -107,24 +107,24 @@ export default function CampanhaDiscador() {
 
       {/* Barra de progresso */}
       <div>
-        <div className="flex justify-between text-xs mb-1.5" style={{ color: '#3A3A42' }}>
+        <div className="flex justify-between text-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>
           <span>{pos} de {total} contatos</span>
           <span>{pct}%</span>
         </div>
-        <div className="h-2 rounded-full" style={{ background: 'rgba(244,244,248,0.08)' }}>
+        <div className="h-2 rounded-full" style={{ background: 'rgba(var(--ink-rgb), 0.08)' }}>
           <div className="h-2 rounded-full transition-all duration-300"
-            style={{ width: `${pct}%`, background: encerrada ? '#3A3A42' : '#C0392B' }} />
+            style={{ width: `${pct}%`, background: encerrada ? 'var(--text-muted)' : 'var(--accent)' }} />
         </div>
       </div>
 
       {/* ── ENCERRADA — Resumo ── */}
       {encerrada && (
         <div className="rounded-xl p-5 space-y-4"
-          style={{ background: 'rgba(244,244,248,0.04)', border: '1px solid rgba(244,244,248,0.06)' }}>
+          style={{ background: 'rgba(var(--ink-rgb), 0.04)', border: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
           <div className="text-center">
-            <i className="ti ti-check-circle text-3xl block mb-1" style={{ color: '#27AE60' }} />
-            <p className="font-bold" style={{ color: '#F4F4F8' }}>Campanha encerrada</p>
-            <p className="text-xs mt-0.5" style={{ color: '#3A3A42' }}>
+            <i className="ti ti-check-circle text-3xl block mb-1" style={{ color: 'var(--success)' }} />
+            <p className="font-bold" style={{ color: 'var(--text)' }}>Campanha encerrada</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
               {campanha.totalContatados} contatados · {campanha.totalPulados} pulados
             </p>
           </div>
@@ -134,7 +134,7 @@ export default function CampanhaDiscador() {
               <div key={key} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <i className={`ti ti-${icon}`} style={{ color }} />
-                  <span style={{ color: '#F4F4F8' }}>{label}</span>
+                  <span style={{ color: 'var(--text)' }}>{label}</span>
                 </div>
                 <span className="font-bold" style={{ color }}>{stats[key] || 0}</span>
               </div>
@@ -142,9 +142,9 @@ export default function CampanhaDiscador() {
           </div>
 
           {campanha.objetivo && (
-            <div className="pt-2" style={{ borderTop: '1px solid rgba(244,244,248,0.06)' }}>
-              <p className="text-xs mb-1" style={{ color: '#3A3A42' }}>Roteiro usado:</p>
-              <p className="text-sm" style={{ color: '#6B6B78' }}>{campanha.objetivo}</p>
+            <div className="pt-2" style={{ borderTop: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
+              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Roteiro usado:</p>
+              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{campanha.objetivo}</p>
             </div>
           )}
         </div>
@@ -153,12 +153,12 @@ export default function CampanhaDiscador() {
       {/* ── PAUSADA ── */}
       {!encerrada && campanha.status === 'pausada' && (
         <div className="rounded-xl p-8 text-center space-y-3"
-          style={{ background: 'rgba(244,244,248,0.03)', border: '1px solid rgba(244,244,248,0.06)' }}>
-          <i className="ti ti-player-pause text-3xl block" style={{ color: '#E67E22' }} />
-          <p style={{ color: '#F4F4F8' }}>Campanha pausada</p>
+          style={{ background: 'rgba(var(--ink-rgb), 0.03)', border: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
+          <i className="ti ti-player-pause text-3xl block" style={{ color: 'var(--warning)' }} />
+          <p style={{ color: 'var(--text)' }}>Campanha pausada</p>
           <button onClick={togglePausa}
             className="text-sm px-6 py-2 rounded font-medium"
-            style={{ background: '#C0392B', color: '#fff' }}>
+            style={{ background: 'var(--accent)', color: '#fff' }}>
             Retomar
           </button>
         </div>
@@ -169,25 +169,25 @@ export default function CampanhaDiscador() {
         <div className="space-y-4">
           {/* Card do contato */}
           <div className="rounded-xl p-5 space-y-3"
-            style={{ background: 'rgba(244,244,248,0.04)', border: '1px solid rgba(244,244,248,0.06)' }}>
+            style={{ background: 'rgba(var(--ink-rgb), 0.04)', border: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
             <span className="text-[11px] px-2 py-0.5 rounded-full font-medium"
-              style={{ background: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>
+              style={{ background: 'rgba(var(--accent-rgb), 0.12)', color: 'var(--accent-hover)' }}>
               #{pos + 1} de {total}
             </span>
-            <h2 className="text-xl font-bold" style={{ color: '#F4F4F8' }}>{atual.nome}</h2>
+            <h2 className="text-xl font-bold" style={{ color: 'var(--text)' }}>{atual.nome}</h2>
             <a href={`tel:${atual.telefone}`}
               className="flex items-center gap-2 text-base font-semibold"
-              style={{ color: '#27AE60' }}>
+              style={{ color: 'var(--success)' }}>
               <i className="ti ti-phone" />{atual.telefone}
             </a>
             {atual.empreendimentoInteresse && (
-              <p className="text-sm" style={{ color: '#3A3A42' }}>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                 <i className="ti ti-building mr-1" />{atual.empreendimentoInteresse}
               </p>
             )}
             {campanha.objetivo && (
               <div className="px-3 py-2 rounded text-xs"
-                style={{ background: 'rgba(244,244,248,0.04)', border: '1px solid rgba(244,244,248,0.05)', color: '#6B6B78' }}>
+                style={{ background: 'rgba(var(--ink-rgb), 0.04)', border: '1px solid rgba(var(--ink-rgb), 0.05)', color: 'var(--text-tertiary)' }}>
                 {campanha.objetivo}
               </div>
             )}
@@ -195,14 +195,14 @@ export default function CampanhaDiscador() {
 
           {/* Anotação */}
           <div>
-            <label className="text-xs block mb-1" style={{ color: '#3A3A42' }}>Anotação (opcional)</label>
+            <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>Anotação (opcional)</label>
             <textarea
               value={comentario}
               onChange={(e) => setComentario(e.target.value)}
               rows={2}
               placeholder="Ex.: demonstrou interesse em 2 quartos…"
               className="w-full text-sm px-3 py-2 rounded outline-none resize-none"
-              style={{ background: 'rgba(244,244,248,0.05)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' }}
+              style={{ background: 'rgba(var(--ink-rgb), 0.05)', color: 'var(--text)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }}
             />
           </div>
 

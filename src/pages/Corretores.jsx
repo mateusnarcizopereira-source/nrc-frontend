@@ -39,7 +39,7 @@ export default function Corretores() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold" style={{ color: '#F4F4F8' }}>Usuários</h1>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Usuários</h1>
         {temPerfil('editor') && (
           <button onClick={() => setModal(true)} className="btn-primary">+ Novo usuário</button>
         )}
@@ -47,13 +47,13 @@ export default function Corretores() {
 
       <div className="card overflow-hidden p-0">
         <table className="w-full text-sm">
-          <thead style={{ background: '#0A0A0C', borderBottom: '1px solid rgba(244,244,248,0.06)' }}>
+          <thead style={{ background: 'var(--surface-4)', borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
             <tr>
               {['Nome', 'E-mail', 'Perfil', 'Status', ''].map((h) => (
                 <th
                   key={h}
                   className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide"
-                  style={{ color: '#3A3A42' }}
+                  style={{ color: 'var(--text-muted)' }}
                 >
                   {h}
                 </th>
@@ -64,16 +64,16 @@ export default function Corretores() {
             {usuarios.map((u) => (
               <tr
                 key={u.id}
-                style={{ borderBottom: '1px solid rgba(244,244,248,0.04)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(244,244,248,0.02)')}
+                style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.04)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--ink-rgb), 0.02)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
-                <td className="px-4 py-3 font-medium" style={{ color: '#F4F4F8' }}>{u.nome}</td>
-                <td className="px-4 py-3" style={{ color: '#6A6A70' }}>{u.email}</td>
+                <td className="px-4 py-3 font-medium" style={{ color: 'var(--text)' }}>{u.nome}</td>
+                <td className="px-4 py-3" style={{ color: 'var(--text-tertiary)' }}>{u.email}</td>
                 <td className="px-4 py-3">
                   <span
                     className="badge capitalize"
-                    style={{ background: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}
+                    style={{ background: 'rgba(var(--accent-rgb), 0.12)', color: 'var(--accent-hover)' }}
                   >
                     {u.perfil}
                   </span>
@@ -83,8 +83,8 @@ export default function Corretores() {
                     className="badge"
                     style={
                       u.ativo
-                        ? { background: 'rgba(46,204,113,0.10)', color: '#2ECC71' }
-                        : { background: 'rgba(192,57,43,0.10)', color: '#C0392B' }
+                        ? { background: 'rgba(var(--success-rgb), 0.10)', color: 'var(--success)' }
+                        : { background: 'rgba(var(--accent-rgb), 0.10)', color: 'var(--accent)' }
                     }
                   >
                     {u.ativo ? 'Ativo' : 'Inativo'}
@@ -95,9 +95,9 @@ export default function Corretores() {
                     <button
                       onClick={() => toggleAtivo(u)}
                       className="text-xs underline transition-colors"
-                      style={{ color: '#3A3A42' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = '#E74C3C')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#3A3A42')}
+                      style={{ color: 'var(--text-muted)' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-hover)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
                     >
                       {u.ativo ? 'Desativar' : 'Ativar'}
                     </button>
@@ -113,9 +113,9 @@ export default function Corretores() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)' }}>
           <div
             className="w-full max-w-md p-6 rounded"
-            style={{ background: '#0D0D0F', border: '1px solid rgba(244,244,248,0.08)' }}
+            style={{ background: 'var(--surface)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }}
           >
-            <h2 className="font-bold text-lg mb-4" style={{ color: '#F4F4F8' }}>Novo usuário</h2>
+            <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--text)' }}>Novo usuário</h2>
             <form onSubmit={salvar} className="space-y-3">
               {[
                 { label: 'Nome', key: 'nome', type: 'text' },
@@ -123,7 +123,7 @@ export default function Corretores() {
                 { label: 'Senha', key: 'senha', type: 'password' },
               ].map(({ label, key, type }) => (
                 <div key={key}>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#6A6A70' }}>{label}</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>{label}</label>
                   <input
                     type={type}
                     className="input"
@@ -135,7 +135,7 @@ export default function Corretores() {
                 </div>
               ))}
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: '#6A6A70' }}>Perfil</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>Perfil</label>
                 <select
                   className="input"
                   value={form.perfil}
@@ -144,7 +144,7 @@ export default function Corretores() {
                   {PERFIS.map((p) => <option key={p} value={p} className="capitalize">{p}</option>)}
                 </select>
               </div>
-              {erro && <p className="text-sm" style={{ color: '#E74C3C' }}>{erro}</p>}
+              {erro && <p className="text-sm" style={{ color: 'var(--accent-hover)' }}>{erro}</p>}
               <div className="flex gap-2 pt-2">
                 <button type="submit" className="btn-primary flex-1">Criar</button>
                 <button type="button" onClick={() => setModal(false)} className="btn-secondary flex-1">Cancelar</button>

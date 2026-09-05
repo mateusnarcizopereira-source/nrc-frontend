@@ -41,15 +41,15 @@ export default function Relatorios() {
   const taxaGeral = total > 0 ? ((vendas / total) * 100).toFixed(1) : '0.0';
 
   const metricCards = [
-    { label: 'Leads ativos',        value: total,           cor: '#F4F4F8'  },
-    { label: 'Vendas',              value: vendas,          cor: '#2ECC71'  },
-    { label: 'Perdidos (descarte)', value: perdidos,        cor: '#E74C3C'  },
-    { label: 'Taxa de conversão',   value: `${taxaGeral}%`, cor: '#9B59B6' },
+    { label: 'Leads ativos',        value: total,           cor: 'var(--text)'  },
+    { label: 'Vendas',              value: vendas,          cor: 'var(--success)'  },
+    { label: 'Perdidos (descarte)', value: perdidos,        cor: 'var(--accent-hover)'  },
+    { label: 'Taxa de conversão',   value: `${taxaGeral}%`, cor: 'var(--purple)' },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold" style={{ color: '#F4F4F8' }}>Relatórios</h1>
+      <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Relatórios</h1>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {metricCards.map((c) => (
@@ -61,19 +61,19 @@ export default function Relatorios() {
       </div>
 
       <div className="card">
-        <h2 className="font-bold mb-4" style={{ color: '#F4F4F8' }}>Ranking por corretor</h2>
+        <h2 className="font-bold mb-4" style={{ color: 'var(--text)' }}>Ranking por corretor</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr
                 className="text-left"
-                style={{ borderBottom: '1px solid rgba(244,244,248,0.06)' }}
+                style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' }}
               >
                 {['Corretor', 'Leads', 'Vendas', 'Conversão'].map((h, i) => (
                   <th
                     key={h}
                     className={`pb-2 text-xs uppercase tracking-wide ${i > 0 ? 'text-right' : ''}`}
-                    style={{ color: '#3A3A42' }}
+                    style={{ color: 'var(--text-muted)' }}
                   >
                     {h}
                   </th>
@@ -84,20 +84,20 @@ export default function Relatorios() {
               {ranking.map((r, i) => (
                 <tr
                   key={r.nome}
-                  style={{ borderBottom: '1px solid rgba(244,244,248,0.04)' }}
+                  style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.04)' }}
                 >
                   <td className="py-2.5">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs w-5" style={{ color: '#2A2A30' }}>#{i + 1}</span>
-                      <span className="font-medium" style={{ color: '#F4F4F8' }}>{r.nome}</span>
+                      <span className="text-xs w-5" style={{ color: 'var(--text-faint)' }}>#{i + 1}</span>
+                      <span className="font-medium" style={{ color: 'var(--text)' }}>{r.nome}</span>
                     </div>
                   </td>
-                  <td className="py-2.5 text-right" style={{ color: '#6A6A70' }}>{r.total}</td>
-                  <td className="py-2.5 text-right font-semibold" style={{ color: '#2ECC71' }}>{r.vendas}</td>
+                  <td className="py-2.5 text-right" style={{ color: 'var(--text-tertiary)' }}>{r.total}</td>
+                  <td className="py-2.5 text-right font-semibold" style={{ color: 'var(--success)' }}>{r.vendas}</td>
                   <td className="py-2.5 text-right">
                     <span
                       className="font-semibold"
-                      style={{ color: parseFloat(r.conversao) >= 20 ? '#C0392B' : '#6A6A70' }}
+                      style={{ color: parseFloat(r.conversao) >= 20 ? 'var(--accent)' : 'var(--text-tertiary)' }}
                     >
                       {r.conversao}%
                     </span>

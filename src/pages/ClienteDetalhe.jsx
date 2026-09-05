@@ -69,8 +69,8 @@ export default function ClienteDetalhe() {
   if (!cliente) return null;
 
   const inputStyle = {
-    background: 'rgba(244,244,248,0.05)', color: '#F4F4F8',
-    border: '1px solid rgba(244,244,248,0.08)',
+    background: 'rgba(var(--ink-rgb), 0.05)', color: 'var(--text)',
+    border: '1px solid rgba(var(--ink-rgb), 0.08)',
   };
 
   return (
@@ -78,27 +78,27 @@ export default function ClienteDetalhe() {
       {/* Voltar */}
       <button onClick={() => navigate('/clientes')}
         className="flex items-center gap-1.5 text-sm"
-        style={{ color: '#3A3A42' }}>
+        style={{ color: 'var(--text-muted)' }}>
         <i className="ti ti-arrow-left" />Clientes
       </button>
 
       {/* Card principal */}
       <div className="rounded-xl p-5 space-y-4"
-        style={{ background: 'rgba(244,244,248,0.04)', border: '1px solid rgba(244,244,248,0.06)' }}>
+        style={{ background: 'rgba(var(--ink-rgb), 0.04)', border: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-lg font-bold" style={{ color: '#F4F4F8' }}>{cliente.nome}</h1>
-            <p className="text-sm mt-0.5" style={{ color: '#3A3A42' }}>{cliente.statusCarteira}</p>
+            <h1 className="text-lg font-bold" style={{ color: 'var(--text)' }}>{cliente.nome}</h1>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>{cliente.statusCarteira}</p>
           </div>
           <div className="flex gap-2">
             <button onClick={() => setEditando(!editando)}
               className="text-xs px-3 py-1.5 rounded font-medium"
-              style={{ background: editando ? 'rgba(192,57,43,0.15)' : 'rgba(244,244,248,0.06)', color: editando ? '#E74C3C' : '#F4F4F8' }}>
+              style={{ background: editando ? 'rgba(var(--accent-rgb), 0.15)' : 'rgba(var(--ink-rgb), 0.06)', color: editando ? 'var(--accent-hover)' : 'var(--text)' }}>
               {editando ? 'Cancelar' : 'Editar'}
             </button>
             <button onClick={deletar}
               className="text-xs px-2 py-1.5 rounded"
-              style={{ background: 'rgba(192,57,43,0.1)', color: '#E74C3C' }}>
+              style={{ background: 'rgba(var(--accent-rgb), 0.1)', color: 'var(--accent-hover)' }}>
               <i className="ti ti-trash" />
             </button>
           </div>
@@ -111,21 +111,21 @@ export default function ClienteDetalhe() {
               ['Empreendimento de interesse', 'empreendimentoInteresse'],
             ].map(([label, key]) => (
               <div key={key}>
-                <label className="text-xs block mb-1" style={{ color: '#3A3A42' }}>{label}</label>
+                <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>{label}</label>
                 <input type="text" value={form[key] || ''} onChange={(e) => set(key, e.target.value)}
                   className="w-full text-sm px-3 py-2 rounded outline-none" style={inputStyle} />
               </div>
             ))}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs block mb-1" style={{ color: '#3A3A42' }}>Status</label>
+                <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>Status</label>
                 <select value={form.statusCarteira} onChange={(e) => set('statusCarteira', e.target.value)}
                   className="w-full text-sm px-2 py-2 rounded outline-none" style={inputStyle}>
                   {STATUS_OPTS.map((o) => <option key={o}>{o}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs block mb-1" style={{ color: '#3A3A42' }}>Origem</label>
+                <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>Origem</label>
                 <select value={form.origemContato} onChange={(e) => set('origemContato', e.target.value)}
                   className="w-full text-sm px-2 py-2 rounded outline-none" style={inputStyle}>
                   {ORIGEM_OPTS.map((o) => <option key={o}>{o}</option>)}
@@ -134,19 +134,19 @@ export default function ClienteDetalhe() {
             </div>
             {form.origemContato === 'Indicação' && (
               <div>
-                <label className="text-xs block mb-1" style={{ color: '#3A3A42' }}>Indicado por</label>
+                <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>Indicado por</label>
                 <input type="text" value={form.nomeIndicador || ''} onChange={(e) => set('nomeIndicador', e.target.value)}
                   className="w-full text-sm px-3 py-2 rounded outline-none" style={inputStyle} />
               </div>
             )}
             <div>
-              <label className="text-xs block mb-1" style={{ color: '#3A3A42' }}>Notas</label>
+              <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>Notas</label>
               <textarea value={form.notas || ''} onChange={(e) => set('notas', e.target.value)} rows={3}
                 className="w-full text-sm px-3 py-2 rounded outline-none resize-none" style={inputStyle} />
             </div>
             <button type="submit" disabled={salvando}
               className="w-full text-sm py-2 rounded font-medium"
-              style={{ background: '#C0392B', color: '#fff', opacity: salvando ? 0.7 : 1 }}>
+              style={{ background: 'var(--accent)', color: '#fff', opacity: salvando ? 0.7 : 1 }}>
               {salvando ? 'Salvando…' : 'Salvar alterações'}
             </button>
           </form>
@@ -160,8 +160,8 @@ export default function ClienteDetalhe() {
               ['Notas', cliente.notas],
             ].filter(([, v]) => v).map(([label, value]) => (
               <div key={label} className="flex gap-2">
-                <span style={{ color: '#3A3A42', minWidth: 100 }}>{label}</span>
-                <span style={{ color: '#F4F4F8' }}>{value}</span>
+                <span style={{ color: 'var(--text-muted)', minWidth: 100 }}>{label}</span>
+                <span style={{ color: 'var(--text)' }}>{value}</span>
               </div>
             ))}
           </div>
@@ -170,7 +170,7 @@ export default function ClienteDetalhe() {
 
       {/* Comentários / Timeline */}
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold" style={{ color: '#F4F4F8' }}>Histórico</h2>
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Histórico</h2>
 
         <form onSubmit={enviarComentario} className="flex gap-2">
           <input
@@ -179,24 +179,24 @@ export default function ClienteDetalhe() {
             onChange={(e) => setNovoComentario(e.target.value)}
             placeholder="Adicionar anotação…"
             className="flex-1 text-sm px-3 py-2 rounded outline-none"
-            style={{ background: 'rgba(244,244,248,0.05)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' }}
+            style={{ background: 'rgba(var(--ink-rgb), 0.05)', color: 'var(--text)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }}
           />
           <button type="submit"
             className="text-sm px-3 py-2 rounded font-medium"
-            style={{ background: '#C0392B', color: '#fff' }}>
+            style={{ background: 'var(--accent)', color: '#fff' }}>
             <i className="ti ti-send" />
           </button>
         </form>
 
         {comentarios.length === 0 ? (
-          <p className="text-xs py-4 text-center" style={{ color: '#3A3A42' }}>Nenhuma anotação ainda</p>
+          <p className="text-xs py-4 text-center" style={{ color: 'var(--text-muted)' }}>Nenhuma anotação ainda</p>
         ) : (
           <div className="space-y-2">
             {comentarios.map((c) => (
               <div key={c.id} className="px-3 py-2.5 rounded-lg"
-                style={{ background: 'rgba(244,244,248,0.04)', border: '1px solid rgba(244,244,248,0.05)' }}>
-                <p className="text-sm" style={{ color: '#F4F4F8' }}>{c.texto}</p>
-                <p className="text-[11px] mt-1" style={{ color: '#3A3A42' }}>
+                style={{ background: 'rgba(var(--ink-rgb), 0.04)', border: '1px solid rgba(var(--ink-rgb), 0.05)' }}>
+                <p className="text-sm" style={{ color: 'var(--text)' }}>{c.texto}</p>
+                <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
                   {c.autorNome} · {new Date(c.criadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>

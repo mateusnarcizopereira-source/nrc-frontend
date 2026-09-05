@@ -52,8 +52,8 @@ export default function MotivoDescarte() {
   return (
     <div className="max-w-xl space-y-5">
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: '#F4F4F8' }}>Motivos de descarte</h1>
-        <p className="text-sm mt-0.5" style={{ color: '#6A6A70' }}>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Motivos de descarte</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
           Lista exibida para o corretor ao marcar um lead como Não Cliente. "Outro" é fixo e não pode ser removido.
         </p>
       </div>
@@ -75,7 +75,7 @@ export default function MotivoDescarte() {
 
       {carregando ? (
         <div className="flex justify-center py-10">
-          <div className="w-7 h-7 border-4 border-[#C0392B] border-t-transparent rounded-full animate-spin" />
+          <div className="w-7 h-7 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="card p-0 overflow-hidden">
@@ -83,23 +83,23 @@ export default function MotivoDescarte() {
             <div
               key={m.id}
               className="flex items-center justify-between gap-4 px-5 py-3.5 transition-colors"
-              style={{ borderBottom: '1px solid rgba(244,244,248,0.05)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(244,244,248,0.02)')}
+              style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.05)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--ink-rgb), 0.02)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
-              <span className="text-sm" style={{ color: '#A0A0A8' }}>{m.texto}</span>
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{m.texto}</span>
               {podeEditar && (
                 <button
                   onClick={() => remover(m.id)}
                   disabled={removendo === m.id}
                   className="transition-colors flex-shrink-0"
-                  style={{ color: '#2A2A30' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = '#E74C3C')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = '#2A2A30')}
+                  style={{ color: 'var(--text-faint)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
                   title="Remover"
                 >
                   {removendo === m.id ? (
-                    <i className="ti ti-loader-2 animate-spin text-[16px]" style={{ color: '#E74C3C' }} aria-hidden="true" />
+                    <i className="ti ti-loader-2 animate-spin text-[16px]" style={{ color: 'var(--accent-hover)' }} aria-hidden="true" />
                   ) : (
                     <i className="ti ti-trash text-[16px]" aria-hidden="true" />
                   )}
@@ -110,16 +110,16 @@ export default function MotivoDescarte() {
 
           <div
             className="flex items-center justify-between gap-4 px-5 py-3.5"
-            style={{ background: '#0A0A0C' }}
+            style={{ background: 'var(--surface-4)' }}
           >
-            <span className="text-sm italic" style={{ color: '#2A2A30' }}>
+            <span className="text-sm italic" style={{ color: 'var(--text-faint)' }}>
               Outro <span className="not-italic text-xs">(fixo — sempre presente)</span>
             </span>
-            <i className="ti ti-lock text-[15px]" style={{ color: '#1E1E24' }} aria-hidden="true" />
+            <i className="ti ti-lock text-[15px]" style={{ color: 'var(--text-faint)' }} aria-hidden="true" />
           </div>
 
           {motivos.length === 0 && (
-            <p className="text-center text-sm py-6 px-5" style={{ color: '#2A2A30' }}>
+            <p className="text-center text-sm py-6 px-5" style={{ color: 'var(--text-faint)' }}>
               Nenhum motivo configurado além de "Outro".
             </p>
           )}

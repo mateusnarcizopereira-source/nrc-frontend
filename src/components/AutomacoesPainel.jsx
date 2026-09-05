@@ -6,10 +6,10 @@ function Toggle({ ativo, onChange }) {
     <button type="button" onClick={() => onChange(!ativo)} aria-pressed={ativo}
       style={{
         width: '44px', height: '24px', borderRadius: '12px', border: 'none', padding: '3px',
-        background: ativo ? '#C0392B' : '#1E1E24', transition: 'background 0.2s', flexShrink: 0, cursor: 'pointer',
+        background: ativo ? 'var(--accent)' : 'var(--surface-4)', transition: 'background 0.2s', flexShrink: 0, cursor: 'pointer',
       }}>
       <span style={{
-        display: 'block', width: '18px', height: '18px', borderRadius: '50%', background: '#F4F4F8',
+        display: 'block', width: '18px', height: '18px', borderRadius: '50%', background: 'var(--surface)',
         transform: ativo ? 'translateX(20px)' : 'translateX(0)', transition: 'transform 0.2s',
       }} />
     </button>
@@ -18,11 +18,11 @@ function Toggle({ ativo, onChange }) {
 
 function LinhaRegra({ titulo, descricao, ativo, onToggle, children }) {
   return (
-    <div className="py-3" style={{ borderTop: '1px solid rgba(244,244,248,0.06)' }}>
+    <div className="py-3" style={{ borderTop: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <p className="font-medium text-sm" style={{ color: '#F4F4F8' }}>{titulo}</p>
-          <p className="text-xs mt-0.5" style={{ color: '#6A6A70' }}>{descricao}</p>
+          <p className="font-medium text-sm" style={{ color: 'var(--text)' }}>{titulo}</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{descricao}</p>
         </div>
         <Toggle ativo={ativo} onChange={onToggle} />
       </div>
@@ -37,7 +37,7 @@ function NumInput({ valor, onChange, sufixo }) {
       <input type="number" min={1} value={valor}
         onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
         className="input" style={{ width: '80px' }} />
-      <span className="text-xs" style={{ color: '#6A6A70' }}>{sufixo}</span>
+      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{sufixo}</span>
     </span>
   );
 }
@@ -98,8 +98,8 @@ export default function AutomacoesPainel() {
   return (
     <>
       <div className="card">
-        <h2 className="font-bold" style={{ color: '#F4F4F8' }}>Automações</h2>
-        <p className="text-xs mt-1" style={{ color: '#6A6A70' }}>
+        <h2 className="font-bold" style={{ color: 'var(--text)' }}>Automações</h2>
+        <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
           Rodam pelo cron a cada ~10min. Toda ação automática é registrada na timeline como "Sistema".
         </p>
 
@@ -127,9 +127,9 @@ export default function AutomacoesPainel() {
           <div className="space-y-2">
             <NumInput valor={cfg.reativarDescartado.dias} onChange={(v) => set('reativarDescartado', 'dias', v)} sufixo="dias após descarte" />
             <div>
-              <p className="text-xs mb-1.5" style={{ color: '#4A4A52' }}>Motivos reativáveis:</p>
+              <p className="text-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>Motivos reativáveis:</p>
               {motivos.length === 0 ? (
-                <p className="text-xs" style={{ color: '#3A3A42' }}>Nenhum motivo de descarte cadastrado.</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Nenhum motivo de descarte cadastrado.</p>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {motivos.map((m) => {
@@ -138,8 +138,8 @@ export default function AutomacoesPainel() {
                       <button key={m.id} type="button" onClick={() => toggleMotivo(m.texto)}
                         className="px-2.5 py-1 text-xs rounded-full transition-colors"
                         style={on
-                          ? { background: 'rgba(46,204,113,0.15)', color: '#2ECC71', border: '1px solid rgba(46,204,113,0.4)' }
-                          : { background: 'transparent', color: '#4A4A52', border: '1px solid rgba(244,244,248,0.10)' }}>
+                          ? { background: 'rgba(var(--success-rgb), 0.15)', color: 'var(--success)', border: '1px solid rgba(var(--success-rgb), 0.4)' }
+                          : { background: 'transparent', color: 'var(--text-muted)', border: '1px solid rgba(var(--ink-rgb), 0.10)' }}>
                         {on ? '✓ ' : ''}{m.texto}
                       </button>
                     );
@@ -162,31 +162,31 @@ export default function AutomacoesPainel() {
           <button onClick={salvar} disabled={salvando} className="btn-primary">
             {salvando ? 'Salvando...' : 'Salvar automações'}
           </button>
-          {msg && <span className="text-sm" style={{ color: msg.startsWith('Erro') ? '#E74C3C' : '#2ECC71' }}>{msg}</span>}
+          {msg && <span className="text-sm" style={{ color: msg.startsWith('Erro') ? 'var(--accent-hover)' : 'var(--success)' }}>{msg}</span>}
         </div>
       </div>
 
       {/* Log de execuções */}
       <div className="card">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="font-bold" style={{ color: '#F4F4F8' }}>Log de automações</h2>
-          <button onClick={carregarLog} className="text-xs px-2 py-1 rounded" style={{ color: '#6A6A70' }}>
+          <h2 className="font-bold" style={{ color: 'var(--text)' }}>Log de automações</h2>
+          <button onClick={carregarLog} className="text-xs px-2 py-1 rounded" style={{ color: 'var(--text-tertiary)' }}>
             <i className="ti ti-refresh mr-1" aria-hidden="true" />Atualizar
           </button>
         </div>
         {execucoes.length === 0 ? (
-          <p className="text-sm py-3 text-center" style={{ color: '#3A3A42' }}>
+          <p className="text-sm py-3 text-center" style={{ color: 'var(--text-muted)' }}>
             Nenhuma execução registrada ainda (o cron grava aqui a cada rodada).
           </p>
         ) : (
           <div className="space-y-1.5 max-h-72 overflow-y-auto">
             {execucoes.map((e, i) => (
               <div key={i} className="flex items-start justify-between gap-3 text-xs py-1.5"
-                style={{ borderBottom: '1px solid rgba(244,244,248,0.04)' }}>
-                <span style={{ color: '#4A4A52' }}>
+                style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.04)' }}>
+                <span style={{ color: 'var(--text-muted)' }}>
                   {new Date(e.rodadoEm || e.criadoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                 </span>
-                <span className="text-right flex-1" style={{ color: '#A0A0A8' }}>{resumoExec(e)}</span>
+                <span className="text-right flex-1" style={{ color: 'var(--text-secondary)' }}>{resumoExec(e)}</span>
               </div>
             ))}
           </div>

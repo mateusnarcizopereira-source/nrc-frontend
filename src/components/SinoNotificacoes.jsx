@@ -35,11 +35,11 @@ export default function SinoNotificacoes({ painelStyle }) {
   return (
     <>
       <button onClick={() => setAberto((v) => !v)} className="relative p-1.5" aria-label="Notificações"
-        style={{ color: aberto ? '#F4F4F8' : '#6A6A70' }}>
+        style={{ color: aberto ? 'var(--text)' : 'var(--text-tertiary)' }}>
         <i className="ti ti-bell text-[20px]" aria-hidden="true" />
         {naoLidas > 0 && (
           <span className="absolute -top-0.5 -right-0.5 text-[9px] font-bold rounded-full flex items-center justify-center"
-            style={{ background: '#C0392B', color: '#fff', minWidth: '15px', height: '15px', padding: '0 3px' }}>
+            style={{ background: 'var(--accent)', color: '#fff', minWidth: '15px', height: '15px', padding: '0 3px' }}>
             {naoLidas > 9 ? '9+' : naoLidas}
           </span>
         )}
@@ -51,21 +51,21 @@ export default function SinoNotificacoes({ painelStyle }) {
           <div className="fixed z-50 rounded-xl shadow-2xl overflow-hidden"
             style={{
               width: '20rem', maxWidth: '90vw', maxHeight: '70vh',
-              background: '#0D0D0F', border: '1px solid rgba(244,244,248,0.10)',
+              background: 'var(--surface)', border: '1px solid rgba(var(--ink-rgb), 0.10)',
               display: 'flex', flexDirection: 'column',
               ...painelStyle,
             }}>
             {/* Cabeçalho */}
             <div className="flex items-center justify-between px-4 py-3"
-              style={{ borderBottom: '1px solid rgba(244,244,248,0.06)' }}>
-              <span className="font-semibold text-sm" style={{ color: '#F4F4F8' }}>Notificações</span>
+              style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
+              <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>Notificações</span>
               <div className="flex items-center gap-1">
                 <button onClick={() => setSomLigado(!somLigado)} title={somLigado ? 'Som ligado' : 'Som desligado'}
-                  className="p-1.5" style={{ color: somLigado ? '#6A6A70' : '#3A3A42' }}>
+                  className="p-1.5" style={{ color: somLigado ? 'var(--text-tertiary)' : 'var(--text-muted)' }}>
                   <i className={`ti ti-${somLigado ? 'volume' : 'volume-off'} text-[16px]`} aria-hidden="true" />
                 </button>
                 {naoLidas > 0 && (
-                  <button onClick={marcarTodas} className="text-[11px] px-2 py-1" style={{ color: '#C0392B' }}>
+                  <button onClick={marcarTodas} className="text-[11px] px-2 py-1" style={{ color: 'var(--accent)' }}>
                     Marcar todas
                   </button>
                 )}
@@ -75,24 +75,24 @@ export default function SinoNotificacoes({ painelStyle }) {
             {/* Lista */}
             <div className="overflow-y-auto">
               {lista.length === 0 ? (
-                <p className="text-sm text-center py-8" style={{ color: '#3A3A42' }}>Nenhuma notificação.</p>
+                <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>Nenhuma notificação.</p>
               ) : (
                 lista.map((n) => (
                   <button key={n.id} onClick={() => abrir(n)}
                     className="w-full text-left flex gap-3 px-4 py-3 transition-colors"
-                    style={{ borderBottom: '1px solid rgba(244,244,248,0.04)', background: n.lida ? 'transparent' : 'rgba(192,57,43,0.05)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(244,244,248,0.04)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = n.lida ? 'transparent' : 'rgba(192,57,43,0.05)')}>
+                    style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.04)', background: n.lida ? 'transparent' : 'rgba(var(--accent-rgb), 0.05)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--ink-rgb), 0.04)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = n.lida ? 'transparent' : 'rgba(var(--accent-rgb), 0.05)')}>
                     <i className={`ti ti-${ICONE[n.tipo] || 'bell'} text-[18px] mt-0.5 flex-shrink-0`}
-                      style={{ color: n.lida ? '#4A4A52' : '#E74C3C' }} aria-hidden="true" />
+                      style={{ color: n.lida ? 'var(--text-muted)' : 'var(--accent-hover)' }} aria-hidden="true" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium truncate" style={{ color: '#F4F4F8' }}>{n.titulo}</p>
-                        <span className="text-[10px] flex-shrink-0" style={{ color: '#3A3A42' }}>{fmt(n.criadoEm)}</span>
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{n.titulo}</p>
+                        <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{fmt(n.criadoEm)}</span>
                       </div>
-                      {n.mensagem && <p className="text-xs mt-0.5 truncate" style={{ color: '#6A6A70' }}>{n.mensagem}</p>}
+                      {n.mensagem && <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>{n.mensagem}</p>}
                     </div>
-                    {!n.lida && <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: '#C0392B' }} />}
+                    {!n.lida && <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: 'var(--accent)' }} />}
                   </button>
                 ))
               )}

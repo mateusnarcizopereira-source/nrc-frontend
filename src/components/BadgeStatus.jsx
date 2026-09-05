@@ -1,67 +1,70 @@
+// Paleta de status (redesign prata claro): cada card é uma "chip" clara com
+// texto escuro saturado — no tema ônix era o inverso (fundo escuro, texto
+// vivo). Papel de cada cor preservado 1:1, só invertida a relação claro/escuro.
 const config = {
   tentando_contato: {
     label: 'Tentando Contato',
     temp: 'GELADO',
-    cls: 'bg-[#0d1520] text-[#5a84b8]',
+    cls: 'bg-[#EAF1F9] text-[#3A5A8A]',
     dot: 'bg-[#4a6fa5]',
     hex: '#4a6fa5',
-    bg: '#0d1520',
+    bg: '#EAF1F9',
   },
   material_enviado: {
     label: 'Material Enviado',
     temp: 'MORNO',
-    cls: 'bg-[#191200] text-[#c49a10]',
+    cls: 'bg-[#FBF3E0] text-[#8A6D0A]',
     dot: 'bg-[#b8860b]',
     hex: '#b8860b',
-    bg: '#191200',
+    bg: '#FBF3E0',
   },
   sem_resposta: {
     label: 'Sem Resposta',
     temp: 'GELADO',
-    cls: 'bg-[#070e1c] text-[#4a6fa5]',
+    cls: 'bg-[#EAF1F9] text-[#3A5A8A]',
     dot: 'bg-[#3a5a8a]',
     hex: '#4a6fa5',
-    bg: '#070e1c',
+    bg: '#EAF1F9',
   },
   meeting_agendado: {
     label: 'Meeting Agendado',
     temp: 'QUENTE',
-    cls: 'bg-[#180c00] text-[#c87020]',
+    cls: 'bg-[#FCEEE0] text-[#B5590F]',
     dot: 'bg-[#c87020]',
     hex: '#e67c22',
-    bg: '#180c00',
+    bg: '#FCEEE0',
   },
   visita_agendada: {
     label: 'Visita Agendada',
     temp: 'QUENTE',
-    cls: 'bg-[#1e0d00] text-[#d4742a]',
+    cls: 'bg-[#FCEEE0] text-[#A85220]',
     dot: 'bg-[#d4742a]',
     hex: '#d4682a',
-    bg: '#1e0d00',
+    bg: '#FCEEE0',
   },
   proposta: {
     label: 'Proposta',
     temp: 'FERVENDO',
-    cls: 'bg-[#190404] text-[#e05050]',
+    cls: 'bg-[#FBEAE8] text-[#C0392B]',
     dot: 'bg-[#E74C3C]',
     hex: '#E74C3C',
-    bg: '#190404',
+    bg: '#FBEAE8',
   },
   venda_finalizada: {
     label: 'Venda Finalizada',
     temp: 'FECHADO',
-    cls: 'bg-[#041a08] text-[#2ECC71]',
+    cls: 'bg-[#E6F5EA] text-[#1E8449]',
     dot: 'bg-[#2ECC71]',
     hex: '#2ECC71',
-    bg: '#041a08',
+    bg: '#E6F5EA',
   },
   descartado: {
     label: 'Não Cliente',
     temp: '',
-    cls: 'bg-[#111114] text-[#3a3a42]',
-    dot: 'bg-[#2a2a32]',
-    hex: '#3a3a42',
-    bg: '#111114',
+    cls: 'bg-[#F0F0F3] text-[#75757E]',
+    dot: 'bg-[#B6B6BE]',
+    hex: '#75757E',
+    bg: '#F0F0F3',
   },
 };
 
@@ -69,15 +72,15 @@ export default function BadgeStatus({ status, showTemp = false }) {
   const c = config[status] || {
     label: status || '—',
     temp: '',
-    cls: 'bg-[#111114] text-[#3a3a42]',
-    dot: 'bg-[#2a2a32]',
+    cls: 'bg-[#F0F0F3] text-[#75757E]',
+    dot: 'bg-[#B6B6BE]',
   };
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${c.cls}`}>
       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
       {c.label}
       {showTemp && c.temp && (
-        <span className="opacity-40 text-[10px] font-medium pl-0.5">· {c.temp}</span>
+        <span className="opacity-50 text-[10px] font-medium pl-0.5">· {c.temp}</span>
       )}
     </span>
   );

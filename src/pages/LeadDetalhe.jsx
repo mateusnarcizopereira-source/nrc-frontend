@@ -30,6 +30,85 @@ function fmtMoeda(v) {
   return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 }
 
+// Monta o número no formato que o wa.me espera (DDI + DDD + número, só dígitos).
+// Leads importados via webhook da Meta já chegam com o telefone gravado como
+// "+55..." (metaWebhookController.js) — telLimpo (dígitos only) já tem o "55"
+// nesse caso. Leads cadastrados manualmente podem vir sem DDI. Sem essa
+// checagem, prependar "55" sempre duplicava o DDI dos leads da Meta e quebrava
+// o link do WhatsApp.
+function numeroWhatsapp(telLimpo) {
+  if (!telLimpo) return '';
+  // BR: 55 + DDD(2) + número(8 ou 9) = 12 ou 13 dígitos já com DDI.
+  if (telLimpo.startsWith('55') && telLimpo.length >= 12) return telLimpo;
+  return `55${telLimpo}`;
+}
+
+// Botão "Enviar material" (Fase 2, item 9 do redesign) — abre o WhatsApp com
+// o link do arquivo já preenchido na mensagem, pro número do próprio lead.
+// Só aparece pro corretor dono do lead (mesma regra de podeEscrever) e só
+// quando o empreendimento do lead já tem algum material anexado.
+function BotaoEnviarMaterial({ lead, telLimpo, materiais, empreendimentoId }) {
+  const [aberto, setAberto] = useState(false);
+
+  function linkPara(material) {
+    const base = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+    return `${base}/empreendimentos/${empreendimentoId}/materiais/${material.id}/arquivo`;
+  }
+
+  function whatsappCom(material) {
+    const texto = `Olá ${lead.nome.split(' ')[0]}! Segue o material de ${lead.empreendimento}: ${linkPara(material)}`;
+    window.open(`https://wa.me/${numeroWhatsapp(telLimpo)}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener,noreferrer');
+    setAberto(false);
+  }
+
+  // Só 1 material: manda direto, sem dropdown.
+  if (materiais.length === 1) {
+    return (
+      <button onClick={() => whatsappCom(materiais[0])}
+        className="flex items-center gap-2 px-4 text-sm font-semibold transition-colors"
+        style={{
+          minHeight: '40px', background: 'rgba(var(--blue-rgb), 0.10)', color: 'var(--blue)',
+          border: '1px solid rgba(var(--blue-rgb), 0.3)', borderRadius: '2px', cursor: 'pointer',
+        }}>
+        <i className="ti ti-file-arrow-right text-[16px]" aria-hidden="true" />
+        Enviar material
+      </button>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <button onClick={() => setAberto((v) => !v)}
+        className="flex items-center gap-2 px-4 text-sm font-semibold transition-colors"
+        style={{
+          minHeight: '40px', background: 'rgba(var(--blue-rgb), 0.10)', color: 'var(--blue)',
+          border: '1px solid rgba(var(--blue-rgb), 0.3)', borderRadius: '2px', cursor: 'pointer',
+        }}>
+        <i className="ti ti-file-arrow-right text-[16px]" aria-hidden="true" />
+        Enviar material
+        <i className={`ti ti-chevron-down text-[14px] transition-transform ${aberto ? 'rotate-180' : ''}`} aria-hidden="true" />
+      </button>
+      {aberto && (
+        <div className="absolute left-0 top-full mt-1 py-1.5 z-50" style={{
+          background: 'var(--surface)', border: '1px solid rgba(var(--ink-rgb), 0.08)',
+          borderRadius: '4px', boxShadow: '0 8px 24px rgba(var(--ink-rgb), 0.12)', minWidth: '220px',
+        }}>
+          {materiais.map((m) => (
+            <button key={m.id} onClick={() => whatsappCom(m)}
+              className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors"
+              style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--ink-rgb), 0.05)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}>
+              <i className="ti ti-file text-[14px] flex-shrink-0" aria-hidden="true" />
+              <span className="truncate">{m.nome}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LeadDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -68,6 +147,10 @@ export default function LeadDetalhe() {
   const [modalTarefaForm, setModalTarefaForm] = useState(null); // {} | { tarefa }
   const [modalConcluirTarefa, setModalConcluirTarefa] = useState(null);
 
+  // Materiais do empreendimento do lead (Fase 2, item 9 do redesign) — só
+  // busca pro corretor dono do lead, que é quem vê o botão de enviar.
+  const [materiaisEmpreendimento, setMateriaisEmpreendimento] = useState([]);
+
   const isCorretorResponsavel = usuario?.perfil === 'corretor' && lead?.corretorId === usuario?.id;
   const podeEscrever = isCorretorResponsavel;
   // Perfil de busca: corretor responsável ou editor (cobre o Modo Solo); Diretor é só-leitura
@@ -103,6 +186,15 @@ export default function LeadDetalhe() {
     api.get('/empreendimentos', { params: { ativo: 'true' } }).then((r) => setEmpreendimentos(r.data)).catch(() => {});
     api.get('/tarefas', { params: { leadId: id } }).then((r) => setTarefasLead(r.data)).catch(() => {});
   }, [id]);
+
+  // Materiais do empreendimento vinculado — carrega assim que o lead chega e
+  // só se ele já tem empreendimentoId (o botão de envio some se não houver).
+  useEffect(() => {
+    if (!lead?.empreendimentoId || !podeEscrever) { setMateriaisEmpreendimento([]); return; }
+    api.get(`/empreendimentos/${lead.empreendimentoId}/materiais`)
+      .then((r) => setMateriaisEmpreendimento(r.data))
+      .catch(() => setMateriaisEmpreendimento([]));
+  }, [lead?.empreendimentoId, podeEscrever]);
 
   function abrirEdicaoPerfil() {
     setPerfilForm({
@@ -180,13 +272,13 @@ export default function LeadDetalhe() {
 
   if (!lead) return (
     <div className="flex justify-center py-16">
-      <div className="w-8 h-8 border-4 border-[#C0392B] border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
   const telLimpo = lead.telefone?.replace(/\D/g, '');
 
-  const divider = { borderBottom: '1px solid rgba(244,244,248,0.06)' };
+  const divider = { borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' };
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
@@ -194,9 +286,9 @@ export default function LeadDetalhe() {
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-1 text-sm transition-colors"
-        style={{ color: '#4A4A52' }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = '#A0A0A8')}
-        onMouseLeave={(e) => (e.currentTarget.style.color = '#4A4A52')}
+        style={{ color: 'var(--text-muted)' }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
       >
         <i className="ti ti-arrow-left text-[16px]" aria-hidden="true" />
         Voltar
@@ -206,9 +298,9 @@ export default function LeadDetalhe() {
       <div className="card">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: '#F4F4F8' }}>{lead.nome}</h1>
-            <p className="font-semibold text-sm mt-1" style={{ color: '#C0392B' }}>{lead.empreendimento}</p>
-            <p className="text-xs mt-1" style={{ color: '#2A2A32' }}>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>{lead.nome}</h1>
+            <p className="font-semibold text-sm mt-1" style={{ color: 'var(--accent)' }}>{lead.empreendimento}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>
               Entrada: {new Date(lead.criadoEm).toLocaleString('pt-BR')} · Origem: {lead.origem}
             </p>
           </div>
@@ -223,15 +315,15 @@ export default function LeadDetalhe() {
               Ligar
             </a>
             <a
-              href={`https://wa.me/55${telLimpo}`}
+              href={`https://wa.me/${numeroWhatsapp(telLimpo)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 text-sm font-semibold transition-colors"
               style={{
                 minHeight: '40px',
-                background: '#1a3a22',
-                color: '#2ECC71',
-                border: '1px solid rgba(46,204,113,0.3)',
+                background: 'rgba(var(--success-rgb), 0.12)',
+                color: 'var(--success)',
+                border: '1px solid rgba(var(--success-rgb), 0.3)',
                 borderRadius: '2px',
                 textDecoration: 'none',
               }}
@@ -245,9 +337,9 @@ export default function LeadDetalhe() {
                 className="flex items-center gap-2 px-4 text-sm font-semibold transition-colors"
                 style={{
                   minHeight: '40px',
-                  background: '#141418',
-                  color: '#A0A0A8',
-                  border: '1px solid rgba(244,244,248,0.12)',
+                  background: 'var(--surface-2)',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid rgba(var(--ink-rgb), 0.12)',
                   borderRadius: '2px',
                   textDecoration: 'none',
                 }}
@@ -256,15 +348,18 @@ export default function LeadDetalhe() {
                 E-mail
               </a>
             )}
+            {podeEscrever && materiaisEmpreendimento.length > 0 && (
+              <BotaoEnviarMaterial lead={lead} telLimpo={telLimpo} materiais={materiaisEmpreendimento} empreendimentoId={lead.empreendimentoId} />
+            )}
           </div>
         )}
 
         {lead.descartado && (
-          <div className="mt-4 p-3 rounded" style={{ background: '#0A0A0C', border: '1px solid rgba(244,244,248,0.05)' }}>
-            <p className="text-sm font-medium" style={{ color: '#6A6A70' }}>Marcado como Não Cliente</p>
-            <p className="text-xs mt-0.5" style={{ color: '#3A3A42' }}>Motivo: {lead.motivoDescarte}</p>
+          <div className="mt-4 p-3 rounded" style={{ background: 'var(--surface-4)', border: '1px solid rgba(var(--ink-rgb), 0.05)' }}>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Marcado como Não Cliente</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Motivo: {lead.motivoDescarte}</p>
             {lead.descartadoPorNome && (
-              <p className="text-xs mt-0.5" style={{ color: '#2A2A30' }}>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>
                 Por {lead.descartadoPorNome} · {lead.descartadoEm && new Date(lead.descartadoEm).toLocaleDateString('pt-BR')}
               </p>
             )}
@@ -274,7 +369,7 @@ export default function LeadDetalhe() {
 
       {/* Dados */}
       <div className="card space-y-3">
-        <h2 className="font-semibold" style={{ color: '#F4F4F8' }}>Dados do lead</h2>
+        <h2 className="font-semibold" style={{ color: 'var(--text)' }}>Dados do lead</h2>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           {[
             { label: 'Telefone', value: lead.telefone },
@@ -284,8 +379,8 @@ export default function LeadDetalhe() {
             { label: 'Corretor', value: lead.corretorNome || 'Não atribuído' },
           ].map(({ label, value }) => (
             <div key={label}>
-              <dt className="text-xs uppercase tracking-wide" style={{ color: '#2A2A30' }}>{label}</dt>
-              <dd className="font-medium mt-0.5" style={{ color: '#D4D4D8' }}>{value}</dd>
+              <dt className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>{label}</dt>
+              <dd className="font-medium mt-0.5" style={{ color: 'var(--text)' }}>{value}</dd>
             </div>
           ))}
         </dl>
@@ -316,17 +411,17 @@ export default function LeadDetalhe() {
                 onClick={() => setPerfilAberto((v) => !v)}
                 className="flex items-center gap-2 flex-1 text-left"
               >
-                <i className={`ti ti-chevron-${perfilAberto ? 'down' : 'right'} text-[16px]`} style={{ color: '#4A4A52' }} aria-hidden="true" />
-                <h2 className="font-semibold" style={{ color: '#F4F4F8' }}>Perfil de Busca</h2>
+                <i className={`ti ti-chevron-${perfilAberto ? 'down' : 'right'} text-[16px]`} style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
+                <h2 className="font-semibold" style={{ color: 'var(--text)' }}>Perfil de Busca</h2>
                 <span className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ background: preenchidos === total ? 'rgba(39,174,96,0.15)' : 'rgba(244,244,248,0.06)',
-                           color: preenchidos === total ? '#27AE60' : '#6A6A70' }}>
+                  style={{ background: preenchidos === total ? 'rgba(var(--success-rgb), 0.15)' : 'rgba(var(--ink-rgb), 0.06)',
+                           color: preenchidos === total ? 'var(--success)' : 'var(--text-tertiary)' }}>
                   {preenchidos} de {total}
                 </span>
               </button>
               {podeEditarPerfil && !lead.descartado && !editandoPerfil && (
                 <button onClick={abrirEdicaoPerfil} className="text-xs px-3 py-1.5 rounded font-medium"
-                  style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8' }}>
+                  style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>
                   <i className="ti ti-pencil mr-1" aria-hidden="true" />Editar
                 </button>
               )}
@@ -334,9 +429,9 @@ export default function LeadDetalhe() {
 
             {/* Barra de completude */}
             {perfilAberto && (
-              <div className="h-1 rounded-full mt-3 mb-1" style={{ background: 'rgba(244,244,248,0.08)' }}>
+              <div className="h-1 rounded-full mt-3 mb-1" style={{ background: 'rgba(var(--ink-rgb), 0.08)' }}>
                 <div className="h-1 rounded-full transition-all"
-                  style={{ width: `${pct}%`, background: preenchidos === total ? '#27AE60' : '#C0392B' }} />
+                  style={{ width: `${pct}%`, background: preenchidos === total ? 'var(--success)' : 'var(--accent)' }} />
               </div>
             )}
 
@@ -345,18 +440,18 @@ export default function LeadDetalhe() {
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mt-3">
                 {campos.map((c) => (
                   <div key={c.label}>
-                    <dt className="text-xs uppercase tracking-wide" style={{ color: '#2A2A30' }}>{c.label}</dt>
+                    <dt className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>{c.label}</dt>
                     <dd className="font-medium mt-0.5">
                       {c.preenchido ? (
-                        <span style={{ color: '#D4D4D8' }}>{c.valor}</span>
+                        <span style={{ color: 'var(--text)' }}>{c.valor}</span>
                       ) : podeEditarPerfil && !lead.descartado ? (
-                        <button onClick={abrirEdicaoPerfil} style={{ color: '#4A4A52' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.color = '#C0392B')}
-                          onMouseLeave={(e) => (e.currentTarget.style.color = '#4A4A52')}>
+                        <button onClick={abrirEdicaoPerfil} style={{ color: 'var(--text-muted)' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}>
                           — <span className="text-xs">adicionar</span>
                         </button>
                       ) : (
-                        <span style={{ color: '#2A2A30' }}>—</span>
+                        <span style={{ color: 'var(--text-faint)' }}>—</span>
                       )}
                     </dd>
                   </div>
@@ -369,7 +464,7 @@ export default function LeadDetalhe() {
               <form onSubmit={salvarPerfil} className="space-y-3 mt-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Empreendimento</label>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Empreendimento</label>
                     <select className="input" value={perfilForm.empreendimentoId}
                       onChange={(e) => setPerfilForm({ ...perfilForm, empreendimentoId: e.target.value })}>
                       <option value="">—</option>
@@ -377,7 +472,7 @@ export default function LeadDetalhe() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Tipologia</label>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Tipologia</label>
                     <select className="input" value={perfilForm.tipologia}
                       onChange={(e) => setPerfilForm({ ...perfilForm, tipologia: e.target.value })}>
                       <option value="">—</option>
@@ -387,7 +482,7 @@ export default function LeadDetalhe() {
                 </div>
 
                 <div>
-                  <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Faixa de valor (R$)</label>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Faixa de valor (R$)</label>
                   <div className="grid grid-cols-2 gap-3">
                     <input type="number" className="input" placeholder="Mínimo" value={perfilForm.faixaValor.min}
                       onChange={(e) => setPerfilForm({ ...perfilForm, faixaValor: { ...perfilForm.faixaValor, min: e.target.value } })} />
@@ -398,7 +493,7 @@ export default function LeadDetalhe() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Finalidade</label>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Finalidade</label>
                     <select className="input" value={perfilForm.finalidade}
                       onChange={(e) => setPerfilForm({ ...perfilForm, finalidade: e.target.value })}>
                       <option value="">—</option>
@@ -406,7 +501,7 @@ export default function LeadDetalhe() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Forma de pagamento</label>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Forma de pagamento</label>
                     <select className="input" value={perfilForm.formaPagamento}
                       onChange={(e) => setPerfilForm({ ...perfilForm, formaPagamento: e.target.value })}>
                       <option value="">—</option>
@@ -414,7 +509,7 @@ export default function LeadDetalhe() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Prazo de compra</label>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Prazo de compra</label>
                     <select className="input" value={perfilForm.prazoCompra}
                       onChange={(e) => setPerfilForm({ ...perfilForm, prazoCompra: e.target.value })}>
                       <option value="">—</option>
@@ -422,7 +517,7 @@ export default function LeadDetalhe() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Origem</label>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Origem</label>
                     <select className="input" value={perfilForm.origem}
                       onChange={(e) => setPerfilForm({ ...perfilForm, origem: e.target.value })}>
                       <option value="">—</option>
@@ -434,7 +529,7 @@ export default function LeadDetalhe() {
                 <div className="flex gap-2 pt-1">
                   <button type="button" onClick={() => setEditandoPerfil(false)}
                     className="flex-1 text-sm py-2 rounded font-medium"
-                    style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8' }}>
+                    style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>
                     Cancelar
                   </button>
                   <button type="submit" disabled={salvandoPerfil} className="flex-1 btn-primary">
@@ -450,7 +545,7 @@ export default function LeadDetalhe() {
       {/* Seletor de temperatura */}
       {podeEscrever && !lead.descartado && (
         <div className="card">
-          <h2 className="font-semibold mb-3" style={{ color: '#F4F4F8' }}>Temperatura do lead</h2>
+          <h2 className="font-semibold mb-3" style={{ color: 'var(--text)' }}>Temperatura do lead</h2>
           <div className="flex flex-wrap gap-2">
             {TEMPERATURA_OPCOES.map((opt) => (
               <button
@@ -461,8 +556,8 @@ export default function LeadDetalhe() {
                   borderRadius: '2px',
                   border: '1px solid',
                   ...(lead.status === opt.value
-                    ? { borderColor: '#C0392B', background: 'rgba(192,57,43,0.12)', color: '#E74C3C' }
-                    : { borderColor: 'rgba(244,244,248,0.10)', background: 'transparent', color: '#4A4A52' }),
+                    ? { borderColor: 'var(--accent)', background: 'rgba(var(--accent-rgb), 0.12)', color: 'var(--accent-hover)' }
+                    : { borderColor: 'rgba(var(--ink-rgb), 0.10)', background: 'transparent', color: 'var(--text-muted)' }),
                 }}
               >
                 <span>{opt.label}</span>
@@ -477,24 +572,24 @@ export default function LeadDetalhe() {
       {!lead.descartado && (
         <div className="card">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold" style={{ color: '#F4F4F8' }}>
+            <h2 className="font-semibold" style={{ color: 'var(--text)' }}>
               Tarefas
               {tarefasLead.filter((t) => t.status === 'Pendente').length > 0 && (
-                <span className="text-xs ml-2" style={{ color: '#6A6A70' }}>
+                <span className="text-xs ml-2" style={{ color: 'var(--text-tertiary)' }}>
                   {tarefasLead.filter((t) => t.status === 'Pendente').length} pendente(s)
                 </span>
               )}
             </h2>
             {podeEditarTarefa && (
               <button onClick={() => setModalTarefaForm({})} className="text-xs px-3 py-1.5 rounded font-medium"
-                style={{ background: '#C0392B', color: '#fff' }}>
+                style={{ background: 'var(--accent)', color: '#fff' }}>
                 <i className="ti ti-plus mr-1" aria-hidden="true" />Nova
               </button>
             )}
           </div>
 
           {tarefasLead.length === 0 ? (
-            <p className="text-sm text-center py-3" style={{ color: '#2A2A30' }}>Nenhuma tarefa para este lead.</p>
+            <p className="text-sm text-center py-3" style={{ color: 'var(--text-faint)' }}>Nenhuma tarefa para este lead.</p>
           ) : (
             <div className="space-y-2">
               {tarefasLead.map((t) => (
@@ -528,8 +623,8 @@ export default function LeadDetalhe() {
               style={{
                 borderBottom: '2px solid',
                 ...(aba === a.key
-                  ? { borderColor: '#C0392B', color: '#C0392B' }
-                  : { borderColor: 'transparent', color: '#4A4A52' }),
+                  ? { borderColor: 'var(--accent)', color: 'var(--accent)' }
+                  : { borderColor: 'transparent', color: 'var(--text-muted)' }),
               }}
             >
               {a.label}
@@ -554,28 +649,28 @@ export default function LeadDetalhe() {
               </form>
 
               {comentarios.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: '#2A2A30' }}>Nenhuma interação registrada ainda.</p>
+                <p className="text-sm text-center py-4" style={{ color: 'var(--text-faint)' }}>Nenhuma interação registrada ainda.</p>
               ) : (
                 <div className="space-y-3">
                   {comentarios.map((c, i) => (
                     <div key={c.id} className="flex gap-3">
                       <div className="flex flex-col items-center">
-                        <div className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: '#C0392B' }} />
+                        <div className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: 'var(--accent)' }} />
                         {i < comentarios.length - 1 && (
-                          <div className="w-px flex-1 mt-1" style={{ background: 'rgba(244,244,248,0.06)' }} />
+                          <div className="w-px flex-1 mt-1" style={{ background: 'rgba(var(--ink-rgb), 0.06)' }} />
                         )}
                       </div>
                       <div className="pb-4 flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-semibold" style={{ color: '#A0A0A8' }}>{c.autorNome}</span>
-                          <span className="text-xs" style={{ color: '#2A2A30' }}>
+                          <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{c.autorNome}</span>
+                          <span className="text-xs" style={{ color: 'var(--text-faint)' }}>
                             {new Date(c.criadoEm).toLocaleString('pt-BR', {
                               day: '2-digit', month: '2-digit', year: 'numeric',
                               hour: '2-digit', minute: '2-digit'
                             })}
                           </span>
                         </div>
-                        <p className="text-sm mt-1" style={{ color: '#D4D4D8' }}>{c.texto}</p>
+                        <p className="text-sm mt-1" style={{ color: 'var(--text)' }}>{c.texto}</p>
                       </div>
                     </div>
                   ))}
@@ -591,21 +686,21 @@ export default function LeadDetalhe() {
                 <form
                   onSubmit={agendarVisita}
                   className="space-y-3 p-4 rounded"
-                  style={{ background: '#0A0A0C', border: '1px solid rgba(244,244,248,0.05)' }}
+                  style={{ background: 'var(--surface-4)', border: '1px solid rgba(var(--ink-rgb), 0.05)' }}
                 >
-                  <p className="text-sm font-semibold" style={{ color: '#A0A0A8' }}>Agendar visita</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Agendar visita</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Data</label>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Data</label>
                       <input type="date" className="input" value={visitaForm.data} onChange={(e) => setVisitaForm({ ...visitaForm, data: e.target.value })} required />
                     </div>
                     <div>
-                      <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Horário</label>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Horário</label>
                       <input type="time" className="input" value={visitaForm.hora} onChange={(e) => setVisitaForm({ ...visitaForm, hora: e.target.value })} required />
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Empreendimento</label>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Empreendimento</label>
                     <SeletorEmpreendimento
                       value={visitaForm.empreendimento}
                       onChange={(nome) => setVisitaForm({ ...visitaForm, empreendimento: nome })}
@@ -614,14 +709,14 @@ export default function LeadDetalhe() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Gerente da visita</label>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Gerente da visita</label>
                     <select className="input" value={visitaForm.gerenteId} onChange={(e) => setVisitaForm({ ...visitaForm, gerenteId: e.target.value })} required>
                       <option value="">Selecionar gerente...</option>
                       {gerentes.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: '#4A4A52' }}>Comentário</label>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Comentário</label>
                     <input className="input" placeholder="Observações da visita..." value={visitaForm.comentario} onChange={(e) => setVisitaForm({ ...visitaForm, comentario: e.target.value })} />
                   </div>
                   <button type="submit" disabled={cadastrandoVisita} className="btn-primary w-full">
@@ -631,29 +726,29 @@ export default function LeadDetalhe() {
               )}
 
               {visitas.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: '#2A2A30' }}>Nenhuma visita agendada.</p>
+                <p className="text-sm text-center py-4" style={{ color: 'var(--text-faint)' }}>Nenhuma visita agendada.</p>
               ) : (
                 <div className="space-y-3">
                   {visitas.map((v) => (
                     <div
                       key={v.id}
                       className="flex gap-3 p-3 rounded"
-                      style={{ background: 'rgba(192,57,43,0.06)', border: '1px solid rgba(192,57,43,0.15)' }}
+                      style={{ background: 'rgba(var(--accent-rgb), 0.06)', border: '1px solid rgba(var(--accent-rgb), 0.15)' }}
                     >
                       <div className="text-center min-w-[48px]">
-                        <p className="text-lg font-bold" style={{ color: '#E74C3C' }}>
+                        <p className="text-lg font-bold" style={{ color: 'var(--accent-hover)' }}>
                           {new Date(v.data + 'T00:00').toLocaleDateString('pt-BR', { day: '2-digit' })}
                         </p>
-                        <p className="text-xs" style={{ color: '#C0392B' }}>
+                        <p className="text-xs" style={{ color: 'var(--accent)' }}>
                           {new Date(v.data + 'T00:00').toLocaleDateString('pt-BR', { month: 'short' })}
                         </p>
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold" style={{ color: '#F4F4F8' }}>{v.empreendimento}</p>
-                        <p className="text-xs" style={{ color: '#4A4A52' }}>{v.hora} · Gerente: {v.gerenteNome}</p>
-                        {v.comentario && <p className="text-xs mt-1" style={{ color: '#6A6A70' }}>{v.comentario}</p>}
+                        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{v.empreendimento}</p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{v.hora} · Gerente: {v.gerenteNome}</p>
+                        {v.comentario && <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{v.comentario}</p>}
                         {v.calendarioEvento?.modo === 'mock' && (
-                          <span className="text-[10px] italic" style={{ color: '#2A2A30' }}>📅 Convite simulado (Google Calendar pendente)</span>
+                          <span className="text-[10px] italic" style={{ color: 'var(--text-faint)' }}>📅 Convite simulado (Google Calendar pendente)</span>
                         )}
                       </div>
                     </div>
@@ -684,10 +779,10 @@ export default function LeadDetalhe() {
       {podeEscrever && !lead.descartado && (
         <div
           className="card"
-          style={{ borderColor: 'rgba(192,57,43,0.25)' }}
+          style={{ borderColor: 'rgba(var(--accent-rgb), 0.25)' }}
         >
-          <h2 className="font-semibold mb-2 text-sm" style={{ color: '#E74C3C' }}>Zona de atenção</h2>
-          <p className="text-xs mb-3" style={{ color: '#4A4A52' }}>
+          <h2 className="font-semibold mb-2 text-sm" style={{ color: 'var(--accent-hover)' }}>Zona de atenção</h2>
+          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
             Esta ação marca o lead como "Não Cliente" e o remove do funil ativo. É irreversível.
           </p>
           <button
@@ -695,11 +790,11 @@ export default function LeadDetalhe() {
             className="px-4 py-2 text-sm font-medium transition-colors"
             style={{
               borderRadius: '2px',
-              border: '1px solid rgba(192,57,43,0.4)',
-              color: '#E74C3C',
+              border: '1px solid rgba(var(--accent-rgb), 0.4)',
+              color: 'var(--accent-hover)',
               background: 'transparent',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(192,57,43,0.1)')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.1)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             Marcar como Não Cliente
@@ -710,9 +805,9 @@ export default function LeadDetalhe() {
       {/* Modal de descarte */}
       {modalDescarte && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
-          <div className="w-full max-w-md p-6 rounded" style={{ background: '#0D0D0F', border: '1px solid rgba(244,244,248,0.08)' }}>
-            <h3 className="text-lg font-bold mb-1" style={{ color: '#F4F4F8' }}>Marcar como Não Cliente?</h3>
-            <p className="text-sm mb-4" style={{ color: '#4A4A52' }}>Escolha o motivo. Esta ação não pode ser desfeita.</p>
+          <div className="w-full max-w-md p-6 rounded" style={{ background: 'var(--surface)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }}>
+            <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--text)' }}>Marcar como Não Cliente?</h3>
+            <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>Escolha o motivo. Esta ação não pode ser desfeita.</p>
 
             <div className="space-y-2 mb-4">
               {[...motivosDescarte.map((m) => m.texto), 'Outro'].map((m) => (
@@ -723,8 +818,8 @@ export default function LeadDetalhe() {
                     borderRadius: '2px',
                     border: '1px solid',
                     ...(motivo === m
-                      ? { borderColor: '#C0392B', background: 'rgba(192,57,43,0.08)' }
-                      : { borderColor: 'rgba(244,244,248,0.08)', background: 'transparent' }),
+                      ? { borderColor: 'var(--accent)', background: 'rgba(var(--accent-rgb), 0.08)' }
+                      : { borderColor: 'rgba(var(--ink-rgb), 0.08)', background: 'transparent' }),
                   }}
                 >
                   <input
@@ -733,9 +828,9 @@ export default function LeadDetalhe() {
                     value={m}
                     checked={motivo === m}
                     onChange={() => setMotivo(m)}
-                    className="accent-[#C0392B]"
+                    className="accent-[var(--accent)]"
                   />
-                  <span className="text-sm" style={{ color: '#A0A0A8' }}>{m}</span>
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{m}</span>
                 </label>
               ))}
             </div>
@@ -746,8 +841,8 @@ export default function LeadDetalhe() {
                 className="flex-1 px-4 py-2 text-sm font-medium transition-colors"
                 style={{
                   borderRadius: '2px',
-                  border: '1px solid rgba(244,244,248,0.12)',
-                  color: '#6A6A70',
+                  border: '1px solid rgba(var(--ink-rgb), 0.12)',
+                  color: 'var(--text-tertiary)',
                   background: 'transparent',
                 }}
               >

@@ -1,11 +1,55 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfig } from '../contexts/ConfigContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import SinoNotificacoes from './SinoNotificacoes';
 import TrocarSenha from '../pages/TrocarSenha';
 import logoIcon from '../assets/logo-nrc-icon.svg';
+
+// ─── Itens de navegação por perfil ─────────────────────────────
+// Mesma allow-list de sempre (espelha exigirPerfis do backend e
+// perfisPermitidos do App.jsx) — só muda a APRESENTAÇÃO (Fase 1).
+// `grupo` null = vira aba direta na barra horizontal (desktop) ou item
+// solto no menu mobile; `grupo` preenchido = cai dentro do dropdown
+// "Mais" (desktop) — é assim que resolvemos "itens não cabem" sem
+// rolagem horizontal nem submenu fixo: perfis com mais telas (editor/
+// GOD) naturalmente empurram mais coisa pro Mais.
+function itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas }) {
+  const itens = [
+    { to: '/', icon: 'layout-dashboard', label: 'Dashboard', end: true, grupo: null },
+  ];
+
+  if (usuario?.perfil !== 'operador') {
+    itens.push({ to: '/leads', icon: 'users', label: 'Leads', grupo: null });
+    itens.push({ to: '/tarefas', icon: 'checklist', label: 'Tarefas', grupo: null, badge: tarefasAtrasadas });
+  }
+
+  if (!modoSolo && ['operador', 'gerente'].includes(usuario?.perfil)) {
+    itens.push({ to: '/operador', icon: 'arrows-sort', label: 'Fila de Distribuição', grupo: null });
+  }
+
+  if (temPerfil('gerente')) {
+    itens.push({ to: '/empreendimentos', icon: 'building-community', label: 'Empreendimentos', grupo: 'Gestão' });
+    itens.push({ to: '/visitas', icon: 'calendar-event', label: 'Visitas', grupo: 'Gestão' });
+    itens.push({ to: '/leads-descartados', icon: 'ban', label: 'Não Clientes', grupo: 'Gestão' });
+    itens.push({ to: '/corretores', icon: 'user-check', label: 'Corretores', grupo: 'Gestão' });
+    itens.push({ to: '/relatorios', icon: 'chart-bar', label: 'Relatórios', grupo: 'Gestão' });
+    itens.push({ to: '/motivos-descarte', icon: 'adjustments-horizontal', label: 'Motivos Descarte', grupo: 'Gestão' });
+  }
+
+  // Allow-list — mesma lista do backend (exigirPerfis) e do App.jsx (perfisPermitidos)
+  if (['corretor', 'gerente', 'editor'].includes(usuario?.perfil)) {
+    itens.push({ to: '/clientes', icon: 'address-book', label: 'Clientes', grupo: 'Carteira' });
+    itens.push({ to: '/campanhas', icon: 'speakerphone', label: 'Oferta Ativa', grupo: 'Carteira' });
+  }
+
+  if (temPerfil('editor')) {
+    itens.push({ to: '/god', icon: 'settings', label: 'GOD Painel', grupo: 'Sistema' });
+  }
+
+  return itens;
+}
 
 function NavItem({ to, icon, label, end = false, onClick, badge = 0 }) {
   return (
@@ -20,7 +64,7 @@ function NavItem({ to, icon, label, end = false, onClick, badge = 0 }) {
       <span className="flex-1">{label}</span>
       {badge > 0 && (
         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
-          style={{ background: '#C0392B', color: '#fff', minWidth: '18px', textAlign: 'center' }}>
+          style={{ background: 'var(--accent)', color: '#fff', minWidth: '18px', textAlign: 'center' }}>
           {badge}
         </span>
       )}
@@ -31,61 +75,114 @@ function NavItem({ to, icon, label, end = false, onClick, badge = 0 }) {
 function NavGroup({ label }) {
   return (
     <p className="px-3 pt-5 pb-1 text-[10px] font-semibold uppercase tracking-widest select-none"
-      style={{ color: '#2A2A32' }}>
+      style={{ color: 'var(--text-faint)' }}>
       {label}
     </p>
   );
 }
 
-function SidebarNav({ modoSolo, usuario, temPerfil, onItemClick, tarefasAtrasadas = 0 }) {
+// Menu mobile (overlay full-list) — inalterado na estrutura, só lê a lista nova.
+function SidebarNav({ itens, onItemClick }) {
+  let grupoAtual = null;
   return (
     <>
-      <NavItem to="/" icon="layout-dashboard" label="Dashboard" end onClick={onItemClick} />
-
-      {usuario?.perfil !== 'operador' && (
-        <NavItem to="/leads" icon="users" label="Leads" onClick={onItemClick} />
-      )}
-
-      {usuario?.perfil !== 'operador' && (
-        <NavItem to="/tarefas" icon="checklist" label="Tarefas" onClick={onItemClick} badge={tarefasAtrasadas} />
-      )}
-
-      {!modoSolo && ['operador', 'gerente'].includes(usuario?.perfil) && (
-        <NavItem to="/operador" icon="arrows-sort" label="Fila de Distribuição" onClick={onItemClick} />
-      )}
-
-      {temPerfil('gerente') && (
-        <>
-          <NavGroup label="Gestão" />
-          <NavItem to="/empreendimentos" icon="building-community" label="Empreendimentos" onClick={onItemClick} />
-          <NavItem to="/visitas" icon="calendar-event" label="Visitas" onClick={onItemClick} />
-          <NavItem to="/leads-descartados" icon="ban" label="Não Clientes" onClick={onItemClick} />
-          <NavItem to="/corretores" icon="user-check" label="Corretores" onClick={onItemClick} />
-          <NavItem to="/relatorios" icon="chart-bar" label="Relatórios" onClick={onItemClick} />
-          <NavItem to="/motivos-descarte" icon="adjustments-horizontal" label="Motivos Descarte" onClick={onItemClick} />
-        </>
-      )}
-
-      {/* Allow-list — mesma lista do backend (exigirPerfis) e do App.jsx (perfisPermitidos) */}
-      {['corretor', 'gerente', 'editor'].includes(usuario?.perfil) && (
-        <>
-          <NavGroup label="Carteira" />
-          <NavItem to="/clientes" icon="address-book" label="Clientes" onClick={onItemClick} />
-          <NavItem to="/campanhas" icon="speakerphone" label="Oferta Ativa" onClick={onItemClick} />
-        </>
-      )}
-
-      {temPerfil('editor') && (
-        <>
-          <NavGroup label="Sistema" />
-          <NavItem to="/god" icon="settings" label="GOD Painel" onClick={onItemClick} />
-        </>
-      )}
+      {itens.map((item) => {
+        const mudouGrupo = item.grupo !== grupoAtual;
+        grupoAtual = item.grupo;
+        return (
+          <div key={item.to}>
+            {mudouGrupo && item.grupo && <NavGroup label={item.grupo} />}
+            <NavItem {...item} onClick={onItemClick} />
+          </div>
+        );
+      })}
     </>
   );
 }
 
-// Bottom nav: 4 itens fixos no rodapé mobile
+// ─── Abas horizontais desktop + dropdown "Mais" ────────────────
+function TabItem({ to, icon, label, end = false, badge = 0 }) {
+  return (
+    <NavLink to={to} end={end} className={({ isActive }) => `tab-link${isActive ? ' tab-link-active' : ''}`}>
+      <i className={`ti ti-${icon} text-[16px]`} aria-hidden="true" />
+      {label}
+      {badge > 0 && (
+        <span className="text-[10px] font-bold px-1.5 rounded-full flex-shrink-0"
+          style={{ background: 'var(--accent)', color: '#fff', minWidth: '16px', textAlign: 'center' }}>
+          {badge}
+        </span>
+      )}
+    </NavLink>
+  );
+}
+
+function TopTabsNav({ itens }) {
+  const [aberto, setAberto] = useState(false);
+  const ref = useRef(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    function fecharSeFora(e) { if (ref.current && !ref.current.contains(e.target)) setAberto(false); }
+    document.addEventListener('mousedown', fecharSeFora);
+    return () => document.removeEventListener('mousedown', fecharSeFora);
+  }, []);
+  useEffect(() => setAberto(false), [location.pathname]);
+
+  const primarios = itens.filter((i) => !i.grupo);
+  const noMais = itens.filter((i) => i.grupo);
+  const algumAtivoNoMais = noMais.some((i) => (i.end ? location.pathname === i.to : location.pathname.startsWith(i.to)));
+
+  let grupoAtual = null;
+  return (
+    <nav className="flex items-stretch gap-1 min-w-0">
+      <div className="flex items-stretch gap-1 overflow-x-auto min-w-0">
+        {primarios.map((item) => <TabItem key={item.to} {...item} />)}
+      </div>
+
+      {noMais.length > 0 && (
+        <div className="relative flex-shrink-0" ref={ref}>
+          <button
+            onClick={() => setAberto((v) => !v)}
+            className={`tab-link${algumAtivoNoMais ? ' tab-link-active' : ''}`}
+            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            <i className="ti ti-dots text-[16px]" aria-hidden="true" />
+            Mais
+            <i className={`ti ti-chevron-down text-[14px] transition-transform ${aberto ? 'rotate-180' : ''}`} aria-hidden="true" />
+          </button>
+
+          {aberto && (
+            <div
+              className="absolute right-0 top-full mt-1 py-2 z-50"
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid rgba(var(--ink-rgb), 0.08)',
+                borderRadius: '4px',
+                boxShadow: '0 8px 24px rgba(var(--ink-rgb), 0.12)',
+                minWidth: '220px',
+              }}
+            >
+              {noMais.map((item) => {
+                const mudouGrupo = item.grupo !== grupoAtual;
+                grupoAtual = item.grupo;
+                return (
+                  <div key={item.to}>
+                    {mudouGrupo && <NavGroup label={item.grupo} />}
+                    <div className="px-2">
+                      <NavItem {...item} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </nav>
+  );
+}
+
+// Bottom nav: 3 itens fixos no rodapé mobile (Fase 1 item 6 — cores via token, estrutura igual)
 const BOTTOM_ITEMS = [
   { to: '/',       icon: 'home',           label: 'Início',  end: true },
   { to: '/leads',  icon: 'users',          label: 'Leads',   end: false },
@@ -116,9 +213,9 @@ export default function Layout() {
   const iniciais = usuario?.nome
     ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?';
 
-  const sidebarBg  = { background: '#0D0D0F', borderRight: '1px solid rgba(244,244,248,0.06)' };
-  const borderTop  = { borderTop: '1px solid rgba(244,244,248,0.06)' };
-  const borderBottom = { borderBottom: '1px solid rgba(244,244,248,0.06)' };
+  const borderBottom = { borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' };
+
+  const itens = itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas });
 
   // Verifica rota ativa para bottom nav
   function isActive(to, end) {
@@ -127,62 +224,58 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#08080A' }}>
+    <div className="flex flex-col h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
 
-      {/* ── Sidebar desktop ───────────────────────────────── */}
-      <aside className="hidden md:flex flex-col w-56 flex-shrink-0" style={sidebarBg}>
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-4" style={borderBottom}>
-          <img src={logoIcon} alt="" className="w-8 h-8 flex-shrink-0" />
+      {/* ── Topbar desktop (abas horizontais no lugar da sidebar) ── */}
+      <header className="hidden md:flex items-center gap-6 px-6 flex-shrink-0" style={{ height: '60px', background: 'var(--surface)', ...borderBottom }}>
+        <div className="flex items-center gap-2.5 flex-shrink-0">
+          <img src={logoIcon} alt="" className="w-7 h-7" />
           <div>
-            <p className="font-black text-base leading-none tracking-widest" style={{ color: '#F4F4F8' }}>NRC</p>
-            <p className="text-[10px] mt-0.5 uppercase tracking-widest" style={{ color: '#2A2A32' }}>
-              Serviço para Empyrus
-            </p>
-          </div>
-          <div className="ml-auto">
-            <SinoNotificacoes painelStyle={{ top: 62, left: 232 }} />
+            <p className="font-semibold text-sm leading-none tracking-widest" style={{ color: 'var(--text)' }}>NRC</p>
+            <p className="text-[9px] mt-0.5 uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>Empyrus</p>
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
-          <SidebarNav modoSolo={modoSolo} usuario={usuario} temPerfil={temPerfil} tarefasAtrasadas={tarefasAtrasadas} />
-        </nav>
+        <TopTabsNav itens={itens} />
 
-        {/* Usuário */}
-        <div className="px-2 py-3" style={borderTop}>
-          <div className="flex items-center gap-2.5 px-2 py-2">
+        <div className="ml-auto flex items-center gap-3 flex-shrink-0">
+          {modoSolo && (
+            <span className="text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded"
+              style={{ background: 'rgba(var(--accent-rgb), 0.10)', color: 'var(--accent)' }}>
+              Solo
+            </span>
+          )}
+          <SinoNotificacoes painelStyle={{ top: 56, right: 100 }} />
+          <div className="w-px h-6" style={{ background: 'rgba(var(--ink-rgb), 0.08)' }} />
+          <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(192,57,43,0.15)' }}>
-              <span className="font-bold text-xs" style={{ color: '#E74C3C' }}>{iniciais}</span>
+              style={{ background: 'rgba(var(--accent-rgb), 0.12)' }}>
+              <span className="font-bold text-xs" style={{ color: 'var(--accent)' }}>{iniciais}</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate leading-tight" style={{ color: '#F4F4F8' }}>
-                {usuario?.nome}
-              </p>
-              <p className="text-[11px] capitalize" style={{ color: '#3A3A42' }}>{usuario?.perfil}</p>
+            <div className="hidden lg:block min-w-0">
+              <p className="text-xs font-semibold truncate leading-tight" style={{ color: 'var(--text)' }}>{usuario?.nome}</p>
+              <p className="text-[10px] capitalize" style={{ color: 'var(--text-muted)' }}>{usuario?.perfil}</p>
             </div>
-            <button onClick={handleLogout} className="p-1 transition-colors" style={{ color: '#3A3A42' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#E74C3C')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#3A3A42')}
+            <button onClick={handleLogout} className="p-1.5 transition-colors" style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
               title="Sair">
               <i className="ti ti-logout text-[18px]" aria-hidden="true" />
             </button>
           </div>
         </div>
-      </aside>
+      </header>
 
       {/* ── Top bar mobile (slim, sem hamburguer) ─────────── */}
       <div
         className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center px-4 h-12"
-        style={{ background: '#0D0D0F', borderBottom: '1px solid rgba(244,244,248,0.06)' }}
+        style={{ background: 'var(--surface)', borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' }}
       >
         <img src={logoIcon} alt="" className="w-6 h-6 mr-2.5" />
-        <span className="font-black text-sm tracking-widest" style={{ color: '#F4F4F8' }}>NRC</span>
+        <span className="font-semibold text-sm tracking-widest" style={{ color: 'var(--text)' }}>NRC</span>
         {modoSolo && (
           <span className="ml-2 text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded"
-            style={{ background: 'rgba(192,57,43,0.12)', color: '#C0392B' }}>
+            style={{ background: 'rgba(var(--accent-rgb), 0.10)', color: 'var(--accent)' }}>
             Solo
           </span>
         )}
@@ -193,35 +286,29 @@ export default function Layout() {
 
       {/* ── Sidebar overlay mobile (aberta via bottom nav "Menu") ── */}
       {menuAberto && (
-        <div className="md:hidden fixed inset-0 z-30" style={{ background: 'rgba(0,0,0,0.7)' }}
+        <div className="md:hidden fixed inset-0 z-30" style={{ background: 'rgba(0,0,0,0.5)' }}
           onClick={() => setMenuAberto(false)}>
-          <aside className="w-64 h-full flex flex-col shadow-2xl" style={{ background: '#0D0D0F' }}
+          <aside className="w-64 h-full flex flex-col shadow-2xl" style={{ background: 'var(--surface)' }}
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2.5 px-4 py-4 mt-12" style={borderBottom}>
               <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(192,57,43,0.15)' }}>
-                <span className="font-bold text-xs" style={{ color: '#E74C3C' }}>{iniciais}</span>
+                style={{ background: 'rgba(var(--accent-rgb), 0.12)' }}>
+                <span className="font-bold text-xs" style={{ color: 'var(--accent)' }}>{iniciais}</span>
               </div>
               <div>
-                <p className="text-sm font-semibold truncate" style={{ color: '#F4F4F8' }}>{usuario?.nome}</p>
-                <p className="text-[11px] capitalize" style={{ color: '#3A3A42' }}>{usuario?.perfil}</p>
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{usuario?.nome}</p>
+                <p className="text-[11px] capitalize" style={{ color: 'var(--text-muted)' }}>{usuario?.perfil}</p>
               </div>
             </div>
             <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
-              <SidebarNav
-                modoSolo={modoSolo}
-                usuario={usuario}
-                temPerfil={temPerfil}
-                tarefasAtrasadas={tarefasAtrasadas}
-                onItemClick={() => setMenuAberto(false)}
-              />
+              <SidebarNav itens={itens} onItemClick={() => setMenuAberto(false)} />
             </nav>
-            <div className="p-2" style={borderTop}>
+            <div className="p-2" style={{ borderTop: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors"
-                style={{ color: '#E74C3C', borderRadius: '2px' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(192,57,43,0.1)')}
+                style={{ color: 'var(--accent-hover)', borderRadius: '2px' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.08)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <i className="ti ti-logout text-[18px]" aria-hidden="true" />
@@ -234,7 +321,7 @@ export default function Layout() {
 
       {/* ── Conteúdo principal ────────────────────────────── */}
       <main className="flex-1 overflow-y-auto pt-12 md:pt-0 pb-16 md:pb-0">
-        <div className="max-w-3xl mx-auto px-4 py-6">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
           <Outlet />
         </div>
       </main>
@@ -243,8 +330,8 @@ export default function Layout() {
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center"
         style={{
-          background: '#0D0D0F',
-          borderTop: '1px solid rgba(244,244,248,0.06)',
+          background: 'var(--surface)',
+          borderTop: '1px solid rgba(var(--ink-rgb), 0.06)',
           height: '56px',
         }}
       >
@@ -260,12 +347,12 @@ export default function Layout() {
             >
               <i
                 className={`ti ti-${icon} text-[20px]`}
-                style={{ color: ativo ? '#E74C3C' : '#3A3A42' }}
+                style={{ color: ativo ? 'var(--accent-hover)' : 'var(--text-muted)' }}
                 aria-hidden="true"
               />
               <span
                 className="text-[10px] font-medium"
-                style={{ color: ativo ? '#E74C3C' : '#3A3A42' }}
+                style={{ color: ativo ? 'var(--accent-hover)' : 'var(--text-muted)' }}
               >
                 {label}
               </span>
@@ -281,10 +368,10 @@ export default function Layout() {
         >
           <i
             className="ti ti-menu-2 text-[20px]"
-            style={{ color: menuAberto ? '#E74C3C' : '#3A3A42' }}
+            style={{ color: menuAberto ? 'var(--accent-hover)' : 'var(--text-muted)' }}
             aria-hidden="true"
           />
-          <span className="text-[10px] font-medium" style={{ color: menuAberto ? '#E74C3C' : '#3A3A42' }}>
+          <span className="text-[10px] font-medium" style={{ color: menuAberto ? 'var(--accent-hover)' : 'var(--text-muted)' }}>
             Menu
           </span>
         </button>

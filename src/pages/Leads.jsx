@@ -49,8 +49,8 @@ export default function Leads() {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#F4F4F8' }}>Leads</h1>
-          <p className="text-sm" style={{ color: '#6A6A70' }}>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Leads</h1>
+          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
             {view === 'kanban' ? 'Quadro por estágio' : `${filtrados.length} resultado${filtrados.length !== 1 ? 's' : ''}`}
           </p>
         </div>
@@ -58,19 +58,19 @@ export default function Leads() {
           {podeImportar && (
             <button onClick={() => setModalImportar(true)}
               className="text-xs px-3 py-1.5 rounded font-medium"
-              style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8', border: '1px solid rgba(244,244,248,0.08)' }}>
+              style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)', border: '1px solid rgba(var(--ink-rgb), 0.08)' }}>
               <i className="ti ti-upload mr-1" aria-hidden="true" />
               <span className="hidden sm:inline">Importar</span>
             </button>
           )}
           {/* Toggle Lista / Kanban */}
-          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(244,244,248,0.10)' }}>
+          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(var(--ink-rgb), 0.10)' }}>
             {[['lista', 'list'], ['kanban', 'layout-kanban']].map(([v, icon]) => (
               <button key={v} onClick={() => trocarView(v)}
                 className="px-3 py-1.5 text-xs font-medium transition-colors"
                 style={view === v
-                  ? { background: '#C0392B', color: '#fff' }
-                  : { background: 'transparent', color: '#6A6A70' }}>
+                  ? { background: 'var(--accent)', color: '#fff' }
+                  : { background: 'transparent', color: 'var(--text-tertiary)' }}>
                 <i className={`ti ti-${icon} text-[14px]`} aria-hidden="true" />
                 <span className="ml-1 hidden sm:inline capitalize">{v}</span>
               </button>
@@ -102,8 +102,8 @@ export default function Leads() {
                 className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors"
                 style={
                   filtro === f.key
-                    ? { background: '#C0392B', color: '#fff', border: '1px solid transparent' }
-                    : { background: '#141418', border: '1px solid rgba(244,244,248,0.10)', color: '#6A6A70' }
+                    ? { background: 'var(--accent)', color: '#fff', border: '1px solid transparent' }
+                    : { background: 'var(--surface-2)', border: '1px solid rgba(var(--ink-rgb), 0.10)', color: 'var(--text-tertiary)' }
                 }
               >
                 {f.label}
@@ -117,11 +117,11 @@ export default function Leads() {
         <KanbanLeads busca={busca} />
       ) : carregando ? (
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-4 border-[#C0392B] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : filtrados.length === 0 ? (
         <div className="card text-center py-12">
-          <p style={{ color: '#3A3A42' }}>Nenhum lead encontrado.</p>
+          <p style={{ color: 'var(--text-muted)' }}>Nenhum lead encontrado.</p>
         </div>
       ) : (
         <div className="grid gap-3">
@@ -131,26 +131,26 @@ export default function Leads() {
               key={lead.id}
               className="card block transition-all"
               style={{ textDecoration: 'none' }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(244,244,248,0.12)')}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(244,244,248,0.06)')}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(var(--ink-rgb), 0.12)')}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(var(--ink-rgb), 0.06)')}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold" style={{ color: '#F4F4F8' }}>{lead.nome}</p>
+                    <p className="font-semibold" style={{ color: 'var(--text)' }}>{lead.nome}</p>
                     <BadgeStatus status={lead.status} showTemp />
                   </div>
-                  <p className="text-sm font-medium mt-0.5" style={{ color: '#C0392B' }}>
+                  <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--accent)' }}>
                     {lead.empreendimento}
                   </p>
-                  <div className="flex flex-wrap gap-4 mt-2 text-xs" style={{ color: '#3A3A42' }}>
+                  <div className="flex flex-wrap gap-4 mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                     <span>{lead.telefone}</span>
                     {lead.email && <span>{lead.email}</span>}
                     {lead.corretorNome && <span>Corretor: {lead.corretorNome}</span>}
                     <span>{lead.origem}</span>
                   </div>
                 </div>
-                <div className="text-xs whitespace-nowrap" style={{ color: '#3A3A42' }}>
+                <div className="text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                   {new Date(lead.criadoEm).toLocaleDateString('pt-BR')}
                 </div>
               </div>

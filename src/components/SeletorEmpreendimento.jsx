@@ -72,7 +72,7 @@ export default function SeletorEmpreendimento({
       {aberto && (filtrados.length > 0 || mostrarCriar) && (
         <div
           className="absolute z-30 mt-1 w-full max-h-52 overflow-y-auto rounded shadow-xl"
-          style={{ background: '#0D0D0F', border: '1px solid rgba(244,244,248,0.12)' }}
+          style={{ background: 'var(--surface)', border: '1px solid rgba(var(--ink-rgb), 0.12)' }}
         >
           {filtrados.map((e) => (
             <button
@@ -80,13 +80,13 @@ export default function SeletorEmpreendimento({
               type="button"
               onClick={() => { onChange(e.nome); setAberto(false); }}
               className="w-full text-left px-3 py-2 text-sm transition-colors"
-              style={{ color: '#D4D4D8' }}
-              onMouseEnter={(ev) => (ev.currentTarget.style.background = 'rgba(192,57,43,0.10)')}
+              style={{ color: 'var(--text)' }}
+              onMouseEnter={(ev) => (ev.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.10)')}
               onMouseLeave={(ev) => (ev.currentTarget.style.background = 'transparent')}
             >
               <span className="font-medium">{e.nome}</span>
               {(e.bairro || e.cidade) && (
-                <span className="text-xs ml-2" style={{ color: '#4A4A52' }}>
+                <span className="text-xs ml-2" style={{ color: 'var(--text-muted)' }}>
                   {[e.bairro, e.cidade].filter(Boolean).join(' · ')}
                 </span>
               )}
@@ -99,8 +99,8 @@ export default function SeletorEmpreendimento({
               onClick={criarNovo}
               disabled={criando}
               className="w-full text-left px-3 py-2 text-sm border-t transition-colors"
-              style={{ color: '#E74C3C', borderColor: 'rgba(244,244,248,0.08)' }}
-              onMouseEnter={(ev) => (ev.currentTarget.style.background = 'rgba(192,57,43,0.10)')}
+              style={{ color: 'var(--accent-hover)', borderColor: 'rgba(var(--ink-rgb), 0.08)' }}
+              onMouseEnter={(ev) => (ev.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.10)')}
               onMouseLeave={(ev) => (ev.currentTarget.style.background = 'transparent')}
             >
               <i className="ti ti-plus mr-1.5" aria-hidden="true" />

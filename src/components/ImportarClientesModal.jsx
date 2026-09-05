@@ -88,12 +88,12 @@ export default function ImportarClientesModal({ onClose, onImportado }) {
   }
 
   const cardStyle = {
-    background: '#13131A',
-    border: '1px solid rgba(244,244,248,0.08)',
+    background: 'var(--surface-3)',
+    border: '1px solid rgba(var(--ink-rgb), 0.08)',
   };
   const inputStyle = {
-    background: 'rgba(244,244,248,0.05)', color: '#F4F4F8',
-    border: '1px solid rgba(244,244,248,0.08)',
+    background: 'rgba(var(--ink-rgb), 0.05)', color: 'var(--text)',
+    border: '1px solid rgba(var(--ink-rgb), 0.08)',
   };
 
   return (
@@ -103,8 +103,8 @@ export default function ImportarClientesModal({ onClose, onImportado }) {
         style={cardStyle} onClick={(e) => e.stopPropagation()}>
 
         <div className="flex items-center justify-between">
-          <h2 className="font-bold text-base" style={{ color: '#F4F4F8' }}>Importar clientes</h2>
-          <button onClick={onClose} style={{ color: '#3A3A42' }}>
+          <h2 className="font-bold text-base" style={{ color: 'var(--text)' }}>Importar clientes</h2>
+          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}>
             <i className="ti ti-x text-lg" />
           </button>
         </div>
@@ -112,13 +112,13 @@ export default function ImportarClientesModal({ onClose, onImportado }) {
         {/* ETAPA: upload */}
         {etapa === 'upload' && (
           <div className="space-y-4">
-            <p className="text-sm" style={{ color: '#6B6B78' }}>
+            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
               Selecione um arquivo Excel (.xlsx) ou CSV com os seus contatos.
             </p>
             <button
               onClick={() => inputRef.current?.click()}
               className="w-full flex flex-col items-center gap-2 py-8 rounded-lg border-2 border-dashed transition-colors"
-              style={{ borderColor: 'rgba(244,244,248,0.1)', color: '#3A3A42' }}
+              style={{ borderColor: 'rgba(var(--ink-rgb), 0.1)', color: 'var(--text-muted)' }}
             >
               <i className="ti ti-upload text-2xl" />
               <span className="text-sm">Clique para selecionar arquivo</span>
@@ -130,12 +130,12 @@ export default function ImportarClientesModal({ onClose, onImportado }) {
         {/* ETAPA: mapear */}
         {etapa === 'mapear' && (
           <div className="space-y-3">
-            <p className="text-xs" style={{ color: '#6B6B78' }}>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               {linhas.length} linhas detectadas. Mapeie as colunas do arquivo:
             </p>
             {CAMPOS.map(({ key, label }) => (
               <div key={key}>
-                <label className="text-xs block mb-1" style={{ color: '#3A3A42' }}>{label}</label>
+                <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>{label}</label>
                 <select
                   value={mapeamento[key] ?? ''}
                   onChange={(e) => setMapeamento((m) => ({ ...m, [key]: e.target.value }))}
@@ -152,14 +152,14 @@ export default function ImportarClientesModal({ onClose, onImportado }) {
             <div className="flex gap-2 pt-2">
               <button onClick={() => setEtapa('upload')}
                 className="flex-1 text-sm py-2 rounded font-medium"
-                style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8' }}>
+                style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>
                 Voltar
               </button>
               <button
                 onClick={construirPreview}
                 disabled={!mapeamento.nome && !mapeamento.telefone}
                 className="flex-1 text-sm py-2 rounded font-medium"
-                style={{ background: '#C0392B', color: '#fff' }}>
+                style={{ background: 'var(--accent)', color: '#fff' }}>
                 Pré-visualizar
               </button>
             </div>
@@ -169,30 +169,30 @@ export default function ImportarClientesModal({ onClose, onImportado }) {
         {/* ETAPA: confirmar */}
         {etapa === 'confirmar' && (
           <div className="space-y-3">
-            <p className="text-xs" style={{ color: '#6B6B78' }}>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               Primeiros {preview.length} registros (de {linhas.length} total):
             </p>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {preview.map((c, i) => (
                 <div key={i} className="px-3 py-2 rounded text-xs"
-                  style={{ background: 'rgba(244,244,248,0.04)', border: '1px solid rgba(244,244,248,0.05)' }}>
-                  <p style={{ color: '#F4F4F8' }}>{c.nome || '(sem nome)'}</p>
-                  <p style={{ color: '#3A3A42' }}>{c.telefone} {c.email && `· ${c.email}`}</p>
+                  style={{ background: 'rgba(var(--ink-rgb), 0.04)', border: '1px solid rgba(var(--ink-rgb), 0.05)' }}>
+                  <p style={{ color: 'var(--text)' }}>{c.nome || '(sem nome)'}</p>
+                  <p style={{ color: 'var(--text-muted)' }}>{c.telefone} {c.email && `· ${c.email}`}</p>
                 </div>
               ))}
             </div>
-            <p className="text-xs" style={{ color: '#6B6B78' }}>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               Contatos com mesmo telefone ou e-mail já existentes serão ignorados automaticamente.
             </p>
             <div className="flex gap-2">
               <button onClick={() => setEtapa('mapear')}
                 className="flex-1 text-sm py-2 rounded font-medium"
-                style={{ background: 'rgba(244,244,248,0.06)', color: '#F4F4F8' }}>
+                style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>
                 Voltar
               </button>
               <button onClick={importar} disabled={importando}
                 className="flex-1 text-sm py-2 rounded font-medium"
-                style={{ background: '#C0392B', color: '#fff', opacity: importando ? 0.7 : 1 }}>
+                style={{ background: 'var(--accent)', color: '#fff', opacity: importando ? 0.7 : 1 }}>
                 {importando ? 'Importando…' : `Importar ${linhas.length}`}
               </button>
             </div>
@@ -202,21 +202,21 @@ export default function ImportarClientesModal({ onClose, onImportado }) {
         {/* ETAPA: resultado */}
         {etapa === 'resultado' && resultado && (
           <div className="space-y-4 text-center">
-            <i className="ti ti-check text-4xl block" style={{ color: '#27AE60' }} />
+            <i className="ti ti-check text-4xl block" style={{ color: 'var(--success)' }} />
             <div className="space-y-1 text-sm">
-              <p style={{ color: '#F4F4F8' }}>
-                <span className="font-bold" style={{ color: '#27AE60' }}>{resultado.importados}</span> importados com sucesso
+              <p style={{ color: 'var(--text)' }}>
+                <span className="font-bold" style={{ color: 'var(--success)' }}>{resultado.importados}</span> importados com sucesso
               </p>
               {resultado.duplicatas > 0 && (
-                <p style={{ color: '#3A3A42' }}>{resultado.duplicatas} duplicata{resultado.duplicatas !== 1 ? 's' : ''} ignorada{resultado.duplicatas !== 1 ? 's' : ''}</p>
+                <p style={{ color: 'var(--text-muted)' }}>{resultado.duplicatas} duplicata{resultado.duplicatas !== 1 ? 's' : ''} ignorada{resultado.duplicatas !== 1 ? 's' : ''}</p>
               )}
               {resultado.invalidos > 0 && (
-                <p style={{ color: '#3A3A42' }}>{resultado.invalidos} inválido{resultado.invalidos !== 1 ? 's' : ''} (sem nome/telefone)</p>
+                <p style={{ color: 'var(--text-muted)' }}>{resultado.invalidos} inválido{resultado.invalidos !== 1 ? 's' : ''} (sem nome/telefone)</p>
               )}
             </div>
             <button onClick={onImportado}
               className="w-full text-sm py-2 rounded font-medium"
-              style={{ background: '#C0392B', color: '#fff' }}>
+              style={{ background: 'var(--accent)', color: '#fff' }}>
               Concluir
             </button>
           </div>

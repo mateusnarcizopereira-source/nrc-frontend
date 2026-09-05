@@ -11,10 +11,10 @@ function iniciais(nome) {
 }
 
 const CARDS_EQUIPE = [
-  { label: 'Tentando Contato', key: 'tentando_contato', cor: '#4a6fa5' },
-  { label: 'Meeting / Visita',  key: '_visita',          cor: '#E67C22' },
-  { label: 'Proposta',          key: 'proposta',         cor: '#E74C3C' },
-  { label: 'Vendas',            key: 'venda_finalizada', cor: '#2ECC71' },
+  { label: 'Tentando Contato', key: 'tentando_contato', cor: 'var(--blue)' },
+  { label: 'Meeting / Visita',  key: '_visita',          cor: 'var(--warning)' },
+  { label: 'Proposta',          key: 'proposta',         cor: 'var(--accent-hover)' },
+  { label: 'Vendas',            key: 'venda_finalizada', cor: 'var(--success)' },
 ];
 
 const DIAS_ESFRIAR = 7;
@@ -93,10 +93,10 @@ export default function Dashboard() {
     .slice(0, 4);
 
   const CARDS_SOLO = [
-    { label: 'Carteira ativa',   value: leadsAtivos.length,      cor: '#F4F4F8'  },
-    { label: 'Em negociação',    value: contagem.proposta + contagem._visita, cor: '#E67C22' },
-    { label: 'Esfriando',        value: leadsEsfriando.length,   cor: leadsEsfriando.length > 0 ? '#E74C3C' : '#3A3A42' },
-    { label: 'Vendas',           value: contagem.venda_finalizada, cor: '#2ECC71' },
+    { label: 'Carteira ativa',   value: leadsAtivos.length,      cor: 'var(--text)'  },
+    { label: 'Em negociação',    value: contagem.proposta + contagem._visita, cor: 'var(--warning)' },
+    { label: 'Esfriando',        value: leadsEsfriando.length,   cor: leadsEsfriando.length > 0 ? 'var(--accent-hover)' : 'var(--text-muted)' },
+    { label: 'Vendas',           value: contagem.venda_finalizada, cor: 'var(--success)' },
   ];
 
   // ── Render ────────────────────────────────────────────────────
@@ -113,10 +113,10 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#F4F4F8' }}>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
             Olá, {usuario?.nome?.split(' ')[0]}
           </h1>
-          <p className="text-sm mt-0.5" style={{ color: '#6A6A70' }}>Resumo de hoje</p>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Resumo de hoje</p>
         </div>
         {usuario?.perfil === 'corretor' && (
           <button
@@ -125,13 +125,13 @@ export default function Dashboard() {
             style={{
               minHeight: '44px', borderRadius: '2px',
               ...(presenca
-                ? { background: '#C0392B', color: '#fff', border: 'none' }
-                : { background: 'transparent', color: '#C0392B', border: '1px solid rgba(192,57,43,0.4)' }),
+                ? { background: 'var(--accent)', color: '#fff', border: 'none' }
+                : { background: 'transparent', color: 'var(--accent)', border: '1px solid rgba(var(--accent-rgb), 0.4)' }),
             }}
             className="flex items-center gap-2 px-5 font-semibold text-sm transition-all"
           >
             <span className={`w-2 h-2 rounded-full ${presenca ? 'animate-pulse' : ''}`}
-              style={{ background: presenca ? '#fff' : '#C0392B' }} />
+              style={{ background: presenca ? '#fff' : 'var(--accent)' }} />
             {checkInLoading ? '...' : presenca ? 'Disponível' : 'Marcar presença'}
           </button>
         )}
@@ -151,12 +151,12 @@ export default function Dashboard() {
       {fila && (
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: '#F4F4F8' }}>
-              <i className="ti ti-arrows-sort text-[16px]" style={{ color: '#3A3A42' }} aria-hidden="true" />
+            <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <i className="ti ti-arrows-sort text-[16px]" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
               Fila do sorteio
             </h2>
             <span className="text-[11px] font-medium capitalize px-2.5 py-1 rounded"
-              style={{ color: '#4A4A52', background: '#141418' }}>
+              style={{ color: 'var(--text-muted)', background: 'var(--surface-2)' }}>
               {fila.periodo}
             </span>
           </div>
@@ -168,11 +168,11 @@ export default function Dashboard() {
                 return (
                   <div key={c.corretorId}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
-                    style={isProximo ? { background: '#C0392B', color: '#fff' } : { background: '#141418', color: '#6A6A70' }}
+                    style={isProximo ? { background: 'var(--accent)', color: '#fff' } : { background: 'var(--surface-2)', color: 'var(--text-tertiary)' }}
                   >
                     <span className="text-xs opacity-60">#{i + 1}</span>
                     <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      style={isProximo ? { background: 'rgba(255,255,255,0.2)', color: '#fff' } : { background: '#1E1E24', color: '#6A6A70' }}>
+                      style={isProximo ? { background: 'rgba(255,255,255,0.2)', color: '#fff' } : { background: 'var(--text-faint)', color: 'var(--text-tertiary)' }}>
                       {iniciais(c.corretorNome)}
                     </span>
                     {c.corretorNome.split(' ')[0]}
@@ -195,10 +195,10 @@ function DashboardSolo({ usuario, cards, leadsEsfriando, proximasVisitas, leadsR
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: '#F4F4F8' }}>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
           {usuario?.nome?.split(' ')[0]}
         </h1>
-        <p className="text-sm mt-0.5" style={{ color: '#6A6A70' }}>Minha carteira</p>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Minha carteira</p>
       </div>
 
       {/* Métricas solo */}
@@ -215,30 +215,30 @@ function DashboardSolo({ usuario, cards, leadsEsfriando, proximasVisitas, leadsR
       {leadsEsfriando.length > 0 && (
         <div className="card p-0 overflow-hidden">
           <div className="flex items-center justify-between px-5 py-3.5"
-            style={{ borderBottom: '1px solid rgba(244,244,248,0.06)', background: 'rgba(192,57,43,0.04)' }}>
-            <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: '#E74C3C' }}>
+            style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)', background: 'rgba(var(--accent-rgb), 0.04)' }}>
+            <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--accent-hover)' }}>
               <i className="ti ti-flame-off text-[16px]" aria-hidden="true" />
               Esfriando ({leadsEsfriando.length})
             </h2>
-            <span className="text-xs" style={{ color: '#4A4A52' }}>sem atividade há +{7} dias</span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>sem atividade há +{7} dias</span>
           </div>
           {leadsEsfriando.slice(0, 4).map((lead) => (
             <Link to={`/leads/${lead.id}`} key={lead.id}
               className="flex items-center justify-between px-5 py-3 transition-colors"
-              style={{ borderBottom: '1px solid rgba(244,244,248,0.04)', textDecoration: 'none' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(244,244,248,0.02)')}
+              style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.04)', textDecoration: 'none' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--ink-rgb), 0.02)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <div className="flex-1 min-w-0 mr-3">
-                <p className="font-semibold text-sm truncate" style={{ color: '#F4F4F8' }}>{lead.nome}</p>
-                <p className="text-xs mt-0.5 truncate" style={{ color: '#3A3A42' }}>{lead.empreendimento}</p>
+                <p className="font-semibold text-sm truncate" style={{ color: 'var(--text)' }}>{lead.nome}</p>
+                <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{lead.empreendimento}</p>
               </div>
               <BadgeStatus status={lead.status} />
             </Link>
           ))}
           {leadsEsfriando.length > 4 && (
             <Link to="/leads" className="block text-center py-3 text-xs font-medium"
-              style={{ color: '#E74C3C', textDecoration: 'none' }}>
+              style={{ color: 'var(--accent-hover)', textDecoration: 'none' }}>
               Ver todos {leadsEsfriando.length} esfriando →
             </Link>
           )}
@@ -249,19 +249,19 @@ function DashboardSolo({ usuario, cards, leadsEsfriando, proximasVisitas, leadsR
       {proximasVisitas.length > 0 && (
         <div className="card p-0 overflow-hidden">
           <div className="flex items-center justify-between px-5 py-3.5"
-            style={{ borderBottom: '1px solid rgba(244,244,248,0.06)' }}>
-            <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: '#F4F4F8' }}>
-              <i className="ti ti-calendar-event text-[16px]" style={{ color: '#3A3A42' }} aria-hidden="true" />
+            style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
+            <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <i className="ti ti-calendar-event text-[16px]" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
               Próximas visitas
             </h2>
-            <Link to="/visitas" className="text-xs font-semibold" style={{ color: '#C0392B', textDecoration: 'none' }}>
+            <Link to="/visitas" className="text-xs font-semibold" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
               Ver todas →
             </Link>
           </div>
           {proximasVisitas.map((v) => (
             <div key={v.id} className="flex items-center gap-4 px-5 py-3"
-              style={{ borderBottom: '1px solid rgba(244,244,248,0.04)' }}>
-              <div className="text-center min-w-[40px]" style={{ color: '#E74C3C' }}>
+              style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.04)' }}>
+              <div className="text-center min-w-[40px]" style={{ color: 'var(--accent-hover)' }}>
                 <p className="text-lg font-black leading-none">
                   {new Date(v.data + 'T00:00').toLocaleDateString('pt-BR', { day: '2-digit' })}
                 </p>
@@ -270,8 +270,8 @@ function DashboardSolo({ usuario, cards, leadsEsfriando, proximasVisitas, leadsR
                 </p>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate" style={{ color: '#F4F4F8' }}>{v.empreendimento}</p>
-                <p className="text-xs truncate" style={{ color: '#3A3A42' }}>{v.hora} · {v.leadNome}</p>
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{v.empreendimento}</p>
+                <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{v.hora} · {v.leadNome}</p>
               </div>
             </div>
           ))}
@@ -288,32 +288,32 @@ function LeadsRecentesCard({ leads }) {
   return (
     <div className="card p-0 overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: '1px solid rgba(244,244,248,0.06)' }}>
-        <h2 className="font-semibold text-sm" style={{ color: '#F4F4F8' }}>Leads recentes</h2>
-        <Link to="/leads" className="text-sm font-semibold" style={{ color: '#C0392B', textDecoration: 'none' }}>
+        style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
+        <h2 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>Leads recentes</h2>
+        <Link to="/leads" className="text-sm font-semibold" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
           Ver todos <i className="ti ti-arrow-right text-[13px]" aria-hidden="true" />
         </Link>
       </div>
       {leads.length === 0 ? (
         <div className="text-center py-10">
-          <i className="ti ti-inbox text-[32px]" style={{ color: '#1E1E24' }} aria-hidden="true" />
-          <p className="text-sm mt-2" style={{ color: '#3A3A42' }}>Nenhum lead ainda.</p>
+          <i className="ti ti-inbox text-[32px]" style={{ color: 'var(--text-faint)' }} aria-hidden="true" />
+          <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Nenhum lead ainda.</p>
         </div>
       ) : (
         <div>
           {leads.map((lead) => (
             <Link to={`/leads/${lead.id}`} key={lead.id}
               className="flex items-center justify-between px-5 py-3.5 transition-colors"
-              style={{ minHeight: '56px', borderBottom: '1px solid rgba(244,244,248,0.04)', textDecoration: 'none' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(244,244,248,0.02)')}
+              style={{ minHeight: '56px', borderBottom: '1px solid rgba(var(--ink-rgb), 0.04)', textDecoration: 'none' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--ink-rgb), 0.02)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <div className="flex-1 min-w-0 mr-3">
-                <p className="font-semibold text-sm truncate" style={{ color: '#F4F4F8' }}>{lead.nome}</p>
-                <p className="text-xs mt-0.5 truncate" style={{ color: '#3A3A42' }}>{lead.empreendimento}</p>
+                <p className="font-semibold text-sm truncate" style={{ color: 'var(--text)' }}>{lead.nome}</p>
+                <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{lead.empreendimento}</p>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
-                <span className="text-xs hidden sm:block" style={{ color: '#3A3A42' }}>
+                <span className="text-xs hidden sm:block" style={{ color: 'var(--text-muted)' }}>
                   {lead.corretorNome?.split(' ')[0] || '—'}
                 </span>
                 <BadgeStatus status={lead.descartado ? 'descartado' : lead.status} />

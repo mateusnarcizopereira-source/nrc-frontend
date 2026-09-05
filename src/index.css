@@ -2,18 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ══════════════════════════════════════════════════════════════
+   TOKENS — sistema visual NRC (redesign ônix → prata claro)
+   Toda cor/espaçamento do app deve vir daqui. Nunca hardcodear
+   hex novo numa tela — adicione um token aqui e referencie via
+   var(--nome) ou rgba(var(--nome-rgb), alpha).
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  /* Superfícies — do fundo (mais acinzentado) pro mais "elevado" (branco) */
+  --bg: #F4F4F8;
+  --surface: #FFFFFF;
+  --surface-2: #F7F7FA;
+  --surface-3: #F0F0F4;
+  --surface-4: #E8E8ED;
+
+  /* Overlay/borda — tinta neutra em opacidade baixa, usada via rgba(var(--ink-rgb), X) */
+  --ink-rgb: 20, 20, 26;
+
+  /* Texto — do mais prata (mudo) ao mais chumbo (destaque) */
+  --text: #1C1C22;
+  --text-secondary: #4B4B56;
+  --text-tertiary: #75757E;
+  --text-muted: #8A8A93;
+  --text-faint: #B6B6BE;
+
+  /* Vermelho NRC — cor de destaque, mantida */
+  --accent: #C0392B;
+  --accent-hover: #E74C3C;
+  --accent-active: #A93226;
+  --accent-rgb: 192, 57, 43;
+
+  /* Status/semânticas — versões escurecidas o bastante pra ler em fundo claro */
+  --success: #1E9E5A;
+  --success-rgb: 30, 158, 90;
+  --warning: #D9720F;
+  --warning-rgb: 217, 114, 15;
+  --amber: #A67C0A;
+  --amber-rgb: 166, 124, 10;
+  --blue: #3568B0;
+  --blue-rgb: 53, 104, 176;
+  --purple: #8E44AD;
+  --purple-rgb: 142, 68, 173;
+}
+
 @layer base {
   html {
-    font-family: 'Helvetica Neue', Arial, system-ui, sans-serif;
+    font-family: 'Inter', 'Helvetica Neue', Arial, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   body {
-    background-color: #08080A;
-    color: #F4F4F8;
+    background-color: var(--bg);
+    color: var(--text);
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
   }
+  /* Títulos mais leves — Inter Display fica pesada em 700+ para leitura em fundo claro */
+  h1, h2, h3 { font-weight: 600; letter-spacing: -0.01em; }
 }
 
 @layer components {
@@ -23,22 +68,22 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 44px;
-    padding: 0 20px;
+    min-height: 46px;
+    padding: 0 22px;
     font-size: 14px;
     font-family: inherit;
     font-weight: 600;
-    letter-spacing: 0.025em;
+    letter-spacing: 0.01em;
     border-radius: 2px;
-    background-color: #C0392B;
+    background-color: var(--accent);
     color: #fff;
     border: none;
     cursor: pointer;
     transition: background-color 0.12s;
     white-space: nowrap;
   }
-  .btn-primary:hover:not(:disabled) { background-color: #E74C3C; }
-  .btn-primary:active:not(:disabled) { background-color: #a93226; }
+  .btn-primary:hover:not(:disabled) { background-color: var(--accent-hover); }
+  .btn-primary:active:not(:disabled) { background-color: var(--accent-active); }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .btn-secondary {
@@ -46,24 +91,24 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 44px;
-    padding: 0 20px;
+    min-height: 46px;
+    padding: 0 22px;
     font-size: 14px;
     font-family: inherit;
     font-weight: 600;
-    letter-spacing: 0.025em;
+    letter-spacing: 0.01em;
     border-radius: 2px;
     background-color: transparent;
-    color: #A0A0A8;
-    border: 1px solid rgba(244, 244, 248, 0.14);
+    color: var(--text-secondary);
+    border: 1px solid rgba(var(--ink-rgb), 0.14);
     cursor: pointer;
     transition: background-color 0.12s, color 0.12s, border-color 0.12s;
     white-space: nowrap;
   }
   .btn-secondary:hover:not(:disabled) {
-    background-color: rgba(244, 244, 248, 0.05);
-    color: #F4F4F8;
-    border-color: rgba(244, 244, 248, 0.25);
+    background-color: rgba(var(--ink-rgb), 0.04);
+    color: var(--text);
+    border-color: rgba(var(--ink-rgb), 0.25);
   }
   .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -72,64 +117,66 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 44px;
-    padding: 0 20px;
+    min-height: 46px;
+    padding: 0 22px;
     font-size: 14px;
     font-family: inherit;
     font-weight: 600;
     border-radius: 2px;
-    background-color: rgba(192, 57, 43, 0.15);
-    color: #E74C3C;
-    border: 1px solid rgba(192, 57, 43, 0.35);
+    background-color: rgba(var(--accent-rgb), 0.10);
+    color: var(--accent);
+    border: 1px solid rgba(var(--accent-rgb), 0.30);
     cursor: pointer;
     transition: background-color 0.12s, color 0.12s;
   }
-  .btn-danger:hover:not(:disabled) { background-color: #C0392B; color: #fff; }
+  .btn-danger:hover:not(:disabled) { background-color: var(--accent); color: #fff; }
   .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
 
   /* ── Inputs ──────────────────────────────── */
   .input {
     display: block;
     width: 100%;
-    min-height: 44px;
-    padding: 0 14px;
+    min-height: 46px;
+    padding: 0 16px;
     font-size: 14px;
     font-family: inherit;
-    color: #F4F4F8;
-    background-color: #060608;
-    border: 1px solid rgba(244, 244, 248, 0.10);
+    color: var(--text);
+    background-color: var(--surface-2);
+    border: 1px solid rgba(var(--ink-rgb), 0.10);
     border-radius: 2px;
     outline: none;
     transition: border-color 0.12s, box-shadow 0.12s;
   }
-  .input::placeholder { color: #3A3A42; }
+  .input::placeholder { color: var(--text-faint); }
   .input:focus {
-    border-color: #C0392B;
-    box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.18);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
   }
   textarea.input {
     min-height: unset;
-    padding: 12px 14px;
+    padding: 14px 16px;
     resize: vertical;
   }
   select.input { appearance: auto; }
-  select.input option { background: #0D0D0F; color: #F4F4F8; }
+  select.input option { background: var(--surface); color: var(--text); }
 
   /* ── Cards ───────────────────────────────── */
   .card {
-    background-color: #0D0D0F;
-    border: 1px solid rgba(244, 244, 248, 0.06);
+    background-color: var(--surface);
+    border: 1px solid rgba(var(--ink-rgb), 0.06);
+    box-shadow: 0 1px 3px rgba(var(--ink-rgb), 0.04);
     border-radius: 4px;
-    padding: 20px;
+    padding: 24px;
   }
   .card-sm {
-    background-color: #0D0D0F;
-    border: 1px solid rgba(244, 244, 248, 0.06);
+    background-color: var(--surface);
+    border: 1px solid rgba(var(--ink-rgb), 0.06);
+    box-shadow: 0 1px 3px rgba(var(--ink-rgb), 0.04);
     border-radius: 4px;
-    padding: 16px;
+    padding: 18px;
   }
 
-  /* ── Nav ─────────────────────────────────── */
+  /* ── Nav (sidebar mobile / itens de menu) ─── */
   .nav-link {
     display: flex;
     align-items: center;
@@ -138,36 +185,59 @@
     min-height: 44px;
     font-size: 14px;
     font-weight: 500;
-    color: #52525A;
+    color: var(--text-tertiary);
     border-left: 2px solid transparent;
     border-radius: 2px;
     transition: color 0.12s, background-color 0.12s;
     text-decoration: none;
   }
   .nav-link:hover {
-    color: #A0A0A8;
-    background-color: rgba(244, 244, 248, 0.04);
+    color: var(--text);
+    background-color: rgba(var(--ink-rgb), 0.04);
   }
   .nav-link-active {
-    color: #F4F4F8 !important;
-    border-left-color: #C0392B;
-    background-color: rgba(192, 57, 43, 0.08) !important;
+    color: var(--accent) !important;
+    border-left-color: var(--accent);
+    background-color: rgba(var(--accent-rgb), 0.08) !important;
+    font-weight: 600;
+  }
+
+  /* ── Abas horizontais (nav desktop, Fase 1 item 5) ── */
+  .tab-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    height: 48px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: color 0.12s, border-color 0.12s;
+    flex-shrink: 0;
+  }
+  .tab-link:hover { color: var(--text); }
+  .tab-link-active {
+    color: var(--accent) !important;
+    border-bottom-color: var(--accent);
     font-weight: 600;
   }
 
   /* ── Metrics ─────────────────────────────── */
   .metric-label {
-    color: #52525A;
+    color: var(--text-tertiary);
     font-weight: 500;
     font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
   .metric-number {
-    font-weight: 700;
+    font-weight: 600;
     font-size: 32px;
     line-height: 1;
-    color: #F4F4F8;
+    color: var(--text);
   }
 
   /* ── Badge ───────────────────────────────── */

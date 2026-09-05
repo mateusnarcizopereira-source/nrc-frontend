@@ -20,8 +20,8 @@ export default function LeadsDescartados() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: '#F4F4F8' }}>Não Clientes</h1>
-        <p className="text-sm" style={{ color: '#6A6A70' }}>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Não Clientes</h1>
+        <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
           {filtrados.length} lead{filtrados.length !== 1 ? 's' : ''} descartado{filtrados.length !== 1 ? 's' : ''}
         </p>
       </div>
@@ -35,11 +35,11 @@ export default function LeadsDescartados() {
 
       {carregando ? (
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-4 border-[#C0392B] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : filtrados.length === 0 ? (
         <div className="card text-center py-12">
-          <p style={{ color: '#3A3A42' }}>Nenhum lead descartado encontrado.</p>
+          <p style={{ color: 'var(--text-muted)' }}>Nenhum lead descartado encontrado.</p>
         </div>
       ) : (
         <div className="grid gap-3">
@@ -49,47 +49,47 @@ export default function LeadsDescartados() {
               key={lead.id}
               className="card block transition-all"
               style={{ textDecoration: 'none', opacity: 0.75 }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.borderColor = 'rgba(244,244,248,0.12)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.75'; e.currentTarget.style.borderColor = 'rgba(244,244,248,0.06)'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.borderColor = 'rgba(var(--ink-rgb), 0.12)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.75'; e.currentTarget.style.borderColor = 'rgba(var(--ink-rgb), 0.06)'; }}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p
                       className="font-semibold line-through"
-                      style={{ color: '#3A3A42', textDecorationColor: '#2A2A30' }}
+                      style={{ color: 'var(--text-muted)', textDecorationColor: 'var(--text-faint)' }}
                     >
                       {lead.nome}
                     </p>
                     <span
                       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                      style={{ background: '#141418', color: '#3A3A42' }}
+                      style={{ background: 'var(--surface-2)', color: 'var(--text-muted)' }}
                     >
                       Não Cliente
                     </span>
                   </div>
-                  <p className="text-sm font-medium mt-0.5" style={{ color: '#4A4A52' }}>{lead.empreendimento}</p>
-                  <div className="flex flex-wrap gap-4 mt-2 text-xs" style={{ color: '#2A2A30' }}>
+                  <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--text-muted)' }}>{lead.empreendimento}</p>
+                  <div className="flex flex-wrap gap-4 mt-2 text-xs" style={{ color: 'var(--text-faint)' }}>
                     <span>{lead.telefone}</span>
                     {lead.corretorNome && <span>Corretor: {lead.corretorNome}</span>}
                   </div>
                   <div
                     className="mt-2 p-2 rounded"
-                    style={{ background: '#0A0A0C', border: '1px solid rgba(244,244,248,0.04)' }}
+                    style={{ background: 'var(--surface-4)', border: '1px solid rgba(var(--ink-rgb), 0.04)' }}
                   >
                     <p className="text-xs">
-                      <span className="font-medium" style={{ color: '#4A4A52' }}>Motivo: </span>
-                      <span style={{ color: '#3A3A42' }}>{lead.motivoDescarte}</span>
+                      <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Motivo: </span>
+                      <span style={{ color: 'var(--text-muted)' }}>{lead.motivoDescarte}</span>
                     </p>
                     {lead.descartadoPorNome && (
-                      <p className="text-xs mt-0.5" style={{ color: '#2A2A30' }}>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>
                         Por {lead.descartadoPorNome}
                         {lead.descartadoEm && ` · ${new Date(lead.descartadoEm).toLocaleDateString('pt-BR')}`}
                       </p>
                     )}
                   </div>
                 </div>
-                <div className="text-xs whitespace-nowrap" style={{ color: '#2A2A30' }}>
+                <div className="text-xs whitespace-nowrap" style={{ color: 'var(--text-faint)' }}>
                   {new Date(lead.criadoEm).toLocaleDateString('pt-BR')}
                 </div>
               </div>
