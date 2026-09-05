@@ -20,13 +20,51 @@ const CARDS_EQUIPE = [
 
 const DIAS_ESFRIAR = 7;
 
+function fmtHora(iso) {
+  return iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+}
+
+// Botão de presença (ajuste round 4, item 1) — menor e discreto, não mais
+// uma pílula vermelha grande de ação destrutiva. Ausente = neutro (branco/
+// borda cinza); presente = verde suave, com a hora real do check-in; no
+// hover do estado presente, o texto avisa a ação ("Sair da fila").
+function BotaoPresenca({ presencaInfo, loading, onToggle }) {
+  const [hover, setHover] = useState(false);
+  const presente = Boolean(presencaInfo);
+
+  const estilo = presente
+    ? { background: 'rgba(var(--success-rgb), 0.12)', color: 'var(--success)', border: '1px solid rgba(var(--success-rgb), 0.25)' }
+    : { background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-color)' };
+
+  let texto;
+  if (loading) texto = 'Atualizando...';
+  else if (presente) texto = hover ? 'Sair da fila' : `Na fila · desde ${fmtHora(presencaInfo.horaCheckIn)}`;
+  else texto = 'Entrar na fila';
+
+  return (
+    <button
+      onClick={onToggle}
+      disabled={loading}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ height: '32px', borderRadius: '999px', ...estilo, transition: 'background-color 0.15s, color 0.15s, border-color 0.15s' }}
+      className="inline-flex items-center gap-1.5 px-3 font-medium text-xs whitespace-nowrap"
+    >
+      <i className={`ti ${presente ? (hover ? 'ti-logout' : 'ti-circle-check') : 'ti-clock'} text-[14px] flex-shrink-0`} aria-hidden="true" />
+      {texto}
+    </button>
+  );
+}
+
 export default function Dashboard() {
   const { usuario } = useAuth();
   const { modoSolo } = useConfig();
 
   const [leads, setLeads] = useState([]);
   const [visitas, setVisitas] = useState([]);
-  const [presenca, setPresenca] = useState(false);
+  // null = ausente; { horaCheckIn } = presente — guarda a hora real do
+  // check-in pro rótulo "Na fila · desde HH:MM" (item 1 do ajuste).
+  const [presencaInfo, setPresencaInfo] = useState(null);
   const [fila, setFila] = useState(null);
   const [checkInLoading, setCheckInLoading] = useState(false);
 
@@ -60,11 +98,15 @@ export default function Dashboard() {
   }
 
   // Bug corrigido: presença era só useState local (sempre false no F5,
-  // mesmo com check-in persistido no Firestore). Lê o estado real ao montar.
+  // mesmo com check-in persistido no Firestore). Lê o estado real ao montar,
+  // guardando a hora real do check-in (não só um booleano).
   useEffect(() => {
     if (usuario?.perfil !== 'corretor') return;
     api.get('/sorteio/presencas')
-      .then((r) => setPresenca(r.data.some((p) => p.corretorId === usuario.id)))
+      .then((r) => {
+        const minha = r.data.find((p) => p.corretorId === usuario.id);
+        setPresencaInfo(minha ? { horaCheckIn: minha.horaCheckIn } : null);
+      })
       .catch(() => {});
   }, [usuario?.id, usuario?.perfil]);
 
@@ -76,8 +118,13 @@ export default function Dashboard() {
   async function togglePresenca() {
     setCheckInLoading(true);
     try {
-      if (presenca) { await api.post('/sorteio/checkout'); setPresenca(false); }
-      else          { await api.post('/sorteio/checkin');  setPresenca(true);  }
+      if (presencaInfo) {
+        await api.post('/sorteio/checkout');
+        setPresencaInfo(null);
+      } else {
+        const res = await api.post('/sorteio/checkin');
+        setPresencaInfo({ horaCheckIn: res.data.presenca?.horaCheckIn || new Date().toISOString() });
+      }
     } finally { setCheckInLoading(false); }
   }
 
@@ -130,20 +177,7 @@ export default function Dashboard() {
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Resumo de hoje</p>
         </div>
         {usuario?.perfil === 'corretor' && (
-          <button
-            onClick={togglePresenca}
-            disabled={checkInLoading}
-            style={{
-              height: '44px', borderRadius: '999px', border: 'none',
-              ...(presenca
-                ? { background: 'rgba(var(--success-rgb), 0.14)', color: 'var(--success)' }
-                : { background: 'var(--accent)', color: '#fff' }),
-            }}
-            className="inline-flex items-center gap-2 px-5 font-semibold text-sm transition-all whitespace-nowrap"
-          >
-            <i className={`ti ${presenca ? 'ti-logout' : 'ti-clock-check'} text-[18px] flex-shrink-0`} aria-hidden="true" />
-            {checkInLoading ? 'Atualizando...' : presenca ? 'Sair da fila' : 'Marcar presença'}
-          </button>
+          <BotaoPresenca presencaInfo={presencaInfo} loading={checkInLoading} onToggle={togglePresenca} />
         )}
       </div>
 

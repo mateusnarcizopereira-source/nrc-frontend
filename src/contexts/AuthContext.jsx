@@ -47,8 +47,14 @@ export function AuthProvider({ children }) {
     setUsuario((u) => (u ? { ...u, precisaTrocarSenha: false } : u));
   }
 
+  // Após upload de foto de perfil bem-sucedido — reflete na hora, sem
+  // precisar recarregar a página (mesmo padrão de confirmarTrocaSenha).
+  function atualizarFoto(fotoBase64, fotoTipo) {
+    setUsuario((u) => (u ? { ...u, fotoBase64, fotoTipo } : u));
+  }
+
   return (
-    <AuthContext.Provider value={{ usuario, carregando, login, logout, temPerfil, confirmarTrocaSenha }}>
+    <AuthContext.Provider value={{ usuario, carregando, login, logout, temPerfil, confirmarTrocaSenha, atualizarFoto }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import Avatar from '../components/Avatar';
 
-function iniciais(nome) {
-  return nome?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?';
-}
 function fmtHora(iso) {
   return iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
 }
@@ -107,11 +105,8 @@ export default function OperadorFila() {
                     minHeight: '64px', borderBottom: '1px solid var(--border-color)',
                     background: c.proximo ? 'rgba(var(--accent-rgb), 0.06)' : 'transparent',
                   }}>
-                    <div className="flex-shrink-0 flex items-center justify-center rounded-full font-bold"
-                      style={c.proximo
-                        ? { width: '44px', height: '44px', fontSize: '14px', background: 'var(--accent)', color: '#fff', boxShadow: '0 0 0 4px rgba(var(--accent-rgb), 0.2)' }
-                        : { width: '36px', height: '36px', fontSize: '12px', background: 'var(--surface-2)', color: 'var(--text-tertiary)' }}>
-                      {iniciais(c.corretorNome)}
+                    <div className="flex-shrink-0 rounded-full" style={c.proximo ? { boxShadow: '0 0 0 3px var(--accent)' } : undefined}>
+                      <Avatar nome={c.corretorNome} fotoBase64={c.fotoBase64} fotoTipo={c.fotoTipo} size={c.proximo ? 44 : 36} />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -164,9 +159,9 @@ export default function OperadorFila() {
               <div className="flex flex-wrap gap-2">
                 {ausentes.map((c) => (
                   <span key={c.corretorId}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                    className="inline-flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full text-xs font-medium"
                     style={{ background: 'var(--surface-2)', color: 'var(--text-faint)', border: '1px solid var(--border-color)' }}>
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--text-faint)' }} />
+                    <Avatar nome={c.corretorNome} fotoBase64={c.fotoBase64} fotoTipo={c.fotoTipo} size={18} opaco />
                     {c.corretorNome}
                   </span>
                 ))}

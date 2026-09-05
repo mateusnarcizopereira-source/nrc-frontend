@@ -5,7 +5,9 @@ import { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import SinoNotificacoes from './SinoNotificacoes';
 import TrocarSenha from '../pages/TrocarSenha';
+import Avatar from './Avatar';
 import logoIcon from '../assets/logo-nrc-icon.svg';
+import { processarFotoPerfil } from '../utils/foto';
 
 // ─── Itens de navegação por perfil ─────────────────────────────
 // Mesma allow-list de sempre (espelha exigirPerfis do backend e
@@ -220,6 +222,103 @@ function TopTabsNav({ itens }) {
   );
 }
 
+// Avatar clicável (topbar desktop) — abre menu com "Alterar foto" e "Sair".
+// Upload já chega recortado/redimensionado/comprimido de utils/foto.js;
+// aqui só sobe pro backend e reflete no AuthContext na hora.
+function AvatarMenu({ usuario, onLogout }) {
+  const { atualizarFoto } = useAuth();
+  const [aberto, setAberto] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
+  const fileRef = useRef(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function fecharSeFora(e) { if (menuRef.current && !menuRef.current.contains(e.target)) setAberto(false); }
+    document.addEventListener('mousedown', fecharSeFora);
+    return () => document.removeEventListener('mousedown', fecharSeFora);
+  }, []);
+
+  async function onEscolherArquivo(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setErro('');
+    setEnviando(true);
+    try {
+      const { base64, tipo } = await processarFotoPerfil(file);
+      await api.patch('/usuarios/me/foto', { fotoBase64: base64, tipo });
+      atualizarFoto(base64, tipo);
+    } catch (err) {
+      setErro(err.response?.data?.erro || err.message || 'Erro ao enviar foto.');
+    }
+    setEnviando(false);
+  }
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setAberto((v) => !v)}
+        className="flex items-center gap-2 transition-opacity"
+        style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: enviando ? 0.5 : 1 }}
+        title={usuario?.nome}
+      >
+        <div className="relative flex-shrink-0">
+          <Avatar nome={usuario?.nome} fotoBase64={usuario?.fotoBase64} fotoTipo={usuario?.fotoTipo} size={32} />
+          {enviando && (
+            <div className="absolute inset-0 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
+              <i className="ti ti-loader-2 animate-spin text-[14px]" style={{ color: '#fff' }} aria-hidden="true" />
+            </div>
+          )}
+        </div>
+        <div className="hidden lg:block min-w-0 text-left">
+          <p className="text-xs font-semibold truncate leading-tight" style={{ color: 'var(--text)' }}>{usuario?.nome}</p>
+          <p className="text-[10px] capitalize" style={{ color: 'var(--text-muted)' }}>{usuario?.perfil}</p>
+        </div>
+        <i className={`ti ti-chevron-down text-[13px] flex-shrink-0 transition-transform ${aberto ? 'rotate-180' : ''}`}
+          style={{ color: 'var(--text-faint)' }} aria-hidden="true" />
+      </button>
+
+      {aberto && (
+        <div className="absolute right-0 top-full mt-1.5 py-1.5 z-50" style={{
+          background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '4px',
+          boxShadow: '0 8px 24px rgba(var(--ink-rgb), 0.12)', minWidth: '180px',
+        }}>
+          <button
+            onClick={() => { fileRef.current?.click(); setAberto(false); }}
+            className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors"
+            style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--ink-rgb), 0.05)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+          >
+            <i className="ti ti-camera text-[15px]" aria-hidden="true" /> Alterar foto
+          </button>
+          <button
+            onClick={() => { setAberto(false); onLogout(); }}
+            className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors"
+            style={{ color: 'var(--accent-hover)', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.06)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+          >
+            <i className="ti ti-logout text-[15px]" aria-hidden="true" /> Sair
+          </button>
+        </div>
+      )}
+
+      {erro && (
+        <div className="absolute right-0 top-full mt-1.5 px-3 py-2 text-xs z-50" style={{
+          background: 'var(--surface)', border: '1px solid rgba(var(--accent-rgb), 0.25)', borderRadius: '4px',
+          color: 'var(--accent-hover)', boxShadow: '0 8px 24px rgba(var(--ink-rgb), 0.12)', width: '220px',
+        }}>
+          {erro}
+        </div>
+      )}
+
+      <input ref={fileRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={onEscolherArquivo} />
+    </div>
+  );
+}
+
 // Bottom nav: 3 itens fixos no rodapé mobile (Fase 1 item 6 — cores via token, estrutura igual)
 const BOTTOM_ITEMS = [
   { to: '/',       icon: 'home',           label: 'Início',  end: true },
@@ -247,9 +346,6 @@ export default function Layout() {
 
   // Troca de senha obrigatória (1º acesso) bloqueia toda a aplicação.
   if (usuario?.precisaTrocarSenha) return <TrocarSenha />;
-
-  const iniciais = usuario?.nome
-    ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?';
 
   const borderBottom = { borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' };
 
@@ -285,22 +381,7 @@ export default function Layout() {
           )}
           <SinoNotificacoes painelStyle={{ top: 56, right: 100 }} />
           <div className="w-px h-6" style={{ background: 'rgba(var(--ink-rgb), 0.08)' }} />
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(var(--accent-rgb), 0.12)' }}>
-              <span className="font-bold text-xs" style={{ color: 'var(--accent)' }}>{iniciais}</span>
-            </div>
-            <div className="hidden lg:block min-w-0">
-              <p className="text-xs font-semibold truncate leading-tight" style={{ color: 'var(--text)' }}>{usuario?.nome}</p>
-              <p className="text-[10px] capitalize" style={{ color: 'var(--text-muted)' }}>{usuario?.perfil}</p>
-            </div>
-            <button onClick={handleLogout} className="p-1.5 transition-colors" style={{ color: 'var(--text-muted)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-              title="Sair">
-              <i className="ti ti-logout text-[18px]" aria-hidden="true" />
-            </button>
-          </div>
+          <AvatarMenu usuario={usuario} onLogout={handleLogout} />
         </div>
       </header>
 
@@ -329,10 +410,7 @@ export default function Layout() {
           <aside className="w-64 h-full flex flex-col shadow-2xl" style={{ background: 'var(--surface)' }}
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2.5 px-4 py-4 mt-12" style={borderBottom}>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(var(--accent-rgb), 0.12)' }}>
-                <span className="font-bold text-xs" style={{ color: 'var(--accent)' }}>{iniciais}</span>
-              </div>
+              <Avatar nome={usuario?.nome} fotoBase64={usuario?.fotoBase64} fotoTipo={usuario?.fotoTipo} size={32} />
               <div>
                 <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{usuario?.nome}</p>
                 <p className="text-[11px] capitalize" style={{ color: 'var(--text-muted)' }}>{usuario?.perfil}</p>
