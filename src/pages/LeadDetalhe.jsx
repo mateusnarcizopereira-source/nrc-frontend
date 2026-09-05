@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { useConfig } from '../contexts/ConfigContext';
@@ -7,6 +7,7 @@ import BadgeStatus from '../components/BadgeStatus';
 import SeletorEmpreendimento from '../components/SeletorEmpreendimento';
 import TarefaCard from '../components/TarefaCard';
 import { TarefaFormModal, ConcluirTarefaModal } from '../components/TarefaModais';
+import { numeroWhatsapp } from '../utils/whatsapp';
 
 const TEMPERATURA_OPCOES = [
   { value: 'tentando_contato', label: 'Tentando Contato', temp: 'FRIO'       },
@@ -30,18 +31,6 @@ function fmtMoeda(v) {
   return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 }
 
-// Monta o número no formato que o wa.me espera (DDI + DDD + número, só dígitos).
-// Leads importados via webhook da Meta já chegam com o telefone gravado como
-// "+55..." (metaWebhookController.js) — telLimpo (dígitos only) já tem o "55"
-// nesse caso. Leads cadastrados manualmente podem vir sem DDI. Sem essa
-// checagem, prependar "55" sempre duplicava o DDI dos leads da Meta e quebrava
-// o link do WhatsApp.
-function numeroWhatsapp(telLimpo) {
-  if (!telLimpo) return '';
-  // BR: 55 + DDD(2) + número(8 ou 9) = 12 ou 13 dígitos já com DDI.
-  if (telLimpo.startsWith('55') && telLimpo.length >= 12) return telLimpo;
-  return `55${telLimpo}`;
-}
 
 // Botão "Enviar material" (Fase 2, item 9 do redesign) — abre o WhatsApp com
 // o link do arquivo já preenchido na mensagem, pro número do próprio lead.
@@ -112,6 +101,7 @@ function BotaoEnviarMaterial({ lead, telLimpo, materiais, empreendimentoId }) {
 export default function LeadDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { usuario, temPerfil } = useAuth();
   const { modoSolo } = useConfig();
 
@@ -153,6 +143,17 @@ export default function LeadDetalhe() {
 
   const isCorretorResponsavel = usuario?.perfil === 'corretor' && lead?.corretorId === usuario?.id;
   const podeEscrever = isCorretorResponsavel;
+
+  // Ícone de "remover" no card da listagem de Leads (ajuste Fase 1, item 4)
+  // manda pra cá com ?descartar=1 — abre direto o modal de descarte já
+  // existente (mesma permissão, mesmo fluxo, só evita duplicar o picker de
+  // motivo na listagem).
+  useEffect(() => {
+    if (searchParams.get('descartar') === '1' && podeEscrever && !lead?.descartado) {
+      setModalDescarte(true);
+      setSearchParams((p) => { p.delete('descartar'); return p; }, { replace: true });
+    }
+  }, [lead, podeEscrever]); // eslint-disable-line react-hooks/exhaustive-deps
   // Perfil de busca: corretor responsável ou editor (cobre o Modo Solo); Diretor é só-leitura
   const podeEditarPerfil = isCorretorResponsavel || usuario?.perfil === 'editor';
   // Tarefas: corretor/gerente/editor mexem; Diretor e Operador não

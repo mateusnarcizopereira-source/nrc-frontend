@@ -38,7 +38,7 @@ function CardKanban({ lead, overlay = false }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: lead.id, data: { fromStatus: lead.status },
   });
-  const cor = STATUS_CONFIG[lead.status]?.hex || 'var(--text-tertiary)';
+  const cor = STATUS_CONFIG[lead.status]?.cor || 'var(--text-tertiary)';
 
   return (
     <div
@@ -81,10 +81,10 @@ function Coluna({ status, leads, limite, onCarregarMais }) {
   return (
     <div className="flex flex-col flex-shrink-0" style={{ width: '260px' }}>
       {/* Header */}
-      <div className="px-2 py-2 rounded-t-lg" style={{ background: 'var(--surface)', borderTop: `2px solid ${cfg.hex || 'var(--text-muted)'}` }}>
+      <div className="px-2 py-2 rounded-t-lg" style={{ background: 'var(--surface)', borderTop: `2px solid ${cfg.cor || 'var(--text-muted)'}` }}>
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wide truncate" style={{ color: 'var(--text)' }}>{cfg.label || status}</span>
-          <span className="text-xs font-bold ml-2 flex-shrink-0" style={{ color: cfg.hex || 'var(--text-tertiary)' }}>{total}</span>
+          <span className="text-xs font-bold ml-2 flex-shrink-0" style={{ color: cfg.cor || 'var(--text-tertiary)' }}>{total}</span>
         </div>
         {valorTotal > 0 && (
           <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{fmtValorCurto(valorTotal)}</p>

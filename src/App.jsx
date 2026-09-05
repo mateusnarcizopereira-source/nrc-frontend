@@ -20,6 +20,7 @@ import Campanhas from './pages/Campanhas';
 import CampanhaDiscador from './pages/CampanhaDiscador';
 import Empreendimentos from './pages/Empreendimentos';
 import Tarefas from './pages/Tarefas';
+import Agenda from './pages/Agenda';
 import Layout from './components/Layout';
 import InstallBanner from './components/InstallBanner';
 
@@ -64,6 +65,7 @@ export default function App() {
               <Route path="corretores" element={<Privado perfisPermitidos={['editor']}><Corretores /></Privado>} />
               <Route path="empreendimentos" element={<Privado perfilMinimo="gerente"><Empreendimentos /></Privado>} />
               <Route path="tarefas" element={<Privado bloqueados={SEM_LEADS}><Tarefas /></Privado>} />
+              <Route path="agenda" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Agenda /></Privado>} />
               <Route path="relatorios" element={<Privado perfilMinimo="gerente"><Relatorios /></Privado>} />
               <Route path="god" element={<Privado perfilMinimo="editor"><GodPainel /></Privado>} />
               <Route path="clientes" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Clientes /></Privado>} />

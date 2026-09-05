@@ -1,86 +1,70 @@
-// Paleta de status (redesign prata claro): cada card é uma "chip" clara com
-// texto escuro saturado — no tema ônix era o inverso (fundo escuro, texto
-// vivo). Papel de cada cor preservado 1:1, só invertida a relação claro/escuro.
+// Paleta de status (ajuste Fase 1 — round 2): uma cor DISTINTA por etapa,
+// não mais agrupada por temperatura. Fundo = tint claro (rgba baixa opacidade
+// do token), texto = o token escurecido (mesmo usado em gráficos/outros
+// lugares), dot = o mesmo tom do texto. Tudo via var(--token) — trocar a cor
+// de uma etapa é editar o token em index.css, não aqui.
 const config = {
   tentando_contato: {
     label: 'Tentando Contato',
     temp: 'GELADO',
-    cls: 'bg-[#EAF1F9] text-[#3A5A8A]',
-    dot: 'bg-[#4a6fa5]',
-    hex: '#4a6fa5',
-    bg: '#EAF1F9',
+    corRgb: 'var(--blue-rgb)',
+    cor: 'var(--blue)',
   },
   material_enviado: {
     label: 'Material Enviado',
     temp: 'MORNO',
-    cls: 'bg-[#FBF3E0] text-[#8A6D0A]',
-    dot: 'bg-[#b8860b]',
-    hex: '#b8860b',
-    bg: '#FBF3E0',
+    corRgb: 'var(--amber-rgb)',
+    cor: 'var(--amber)',
   },
   sem_resposta: {
     label: 'Sem Resposta',
     temp: 'GELADO',
-    cls: 'bg-[#EAF1F9] text-[#3A5A8A]',
-    dot: 'bg-[#3a5a8a]',
-    hex: '#4a6fa5',
-    bg: '#EAF1F9',
+    corRgb: 'var(--teal-rgb)',
+    cor: 'var(--teal)',
   },
   meeting_agendado: {
     label: 'Meeting Agendado',
     temp: 'QUENTE',
-    cls: 'bg-[#FCEEE0] text-[#B5590F]',
-    dot: 'bg-[#c87020]',
-    hex: '#e67c22',
-    bg: '#FCEEE0',
+    corRgb: 'var(--terracotta-rgb)',
+    cor: 'var(--terracotta)',
   },
   visita_agendada: {
     label: 'Visita Agendada',
     temp: 'QUENTE',
-    cls: 'bg-[#FCEEE0] text-[#A85220]',
-    dot: 'bg-[#d4742a]',
-    hex: '#d4682a',
-    bg: '#FCEEE0',
+    corRgb: 'var(--purple-rgb)',
+    cor: 'var(--purple)',
   },
   proposta: {
     label: 'Proposta',
     temp: 'FERVENDO',
-    cls: 'bg-[#FBEAE8] text-[#C0392B]',
-    dot: 'bg-[#E74C3C]',
-    hex: '#E74C3C',
-    bg: '#FBEAE8',
+    corRgb: 'var(--warning-rgb)',
+    cor: 'var(--warning)',
   },
   venda_finalizada: {
     label: 'Venda Finalizada',
     temp: 'FECHADO',
-    cls: 'bg-[#E6F5EA] text-[#1E8449]',
-    dot: 'bg-[#2ECC71]',
-    hex: '#2ECC71',
-    bg: '#E6F5EA',
+    corRgb: 'var(--success-rgb)',
+    cor: 'var(--success)',
   },
   descartado: {
     label: 'Não Cliente',
     temp: '',
-    cls: 'bg-[#F0F0F3] text-[#75757E]',
-    dot: 'bg-[#B6B6BE]',
-    hex: '#75757E',
-    bg: '#F0F0F3',
+    corRgb: 'var(--ink-rgb)',
+    cor: 'var(--text-tertiary)',
   },
 };
 
 export default function BadgeStatus({ status, showTemp = false }) {
-  const c = config[status] || {
-    label: status || '—',
-    temp: '',
-    cls: 'bg-[#F0F0F3] text-[#75757E]',
-    dot: 'bg-[#B6B6BE]',
-  };
+  const c = config[status] || config.descartado;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${c.cls}`}>
-      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
-      {c.label}
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+      style={{ background: `rgba(${c.corRgb}, 0.14)`, color: c.cor }}
+    >
+      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c.cor }} />
+      {status && !config[status] ? (status || '—') : c.label}
       {showTemp && c.temp && (
-        <span className="opacity-50 text-[10px] font-medium pl-0.5">· {c.temp}</span>
+        <span className="opacity-60 text-[10px] font-medium pl-0.5">· {c.temp}</span>
       )}
     </span>
   );

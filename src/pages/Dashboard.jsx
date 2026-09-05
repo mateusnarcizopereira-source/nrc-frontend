@@ -5,6 +5,7 @@ import { useConfig } from '../contexts/ConfigContext';
 import { conectarSocket } from '../services/socket';
 import api from '../services/api';
 import BadgeStatus from '../components/BadgeStatus';
+import { GraficoFunil, GraficoOrigem } from '../components/DashboardCharts';
 
 function iniciais(nome) {
   return nome?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?';
@@ -103,6 +104,7 @@ export default function Dashboard() {
   if (modoSolo) return <DashboardSolo
     usuario={usuario}
     cards={CARDS_SOLO}
+    leads={leadsAtivos}
     leadsEsfriando={leadsEsfriando}
     proximasVisitas={proximasVisitas}
     leadsRecentes={leadsRecentes}
@@ -123,16 +125,15 @@ export default function Dashboard() {
             onClick={togglePresenca}
             disabled={checkInLoading}
             style={{
-              minHeight: '44px', borderRadius: '2px',
+              height: '44px', borderRadius: '999px', border: 'none',
               ...(presenca
-                ? { background: 'var(--accent)', color: '#fff', border: 'none' }
-                : { background: 'transparent', color: 'var(--accent)', border: '1px solid rgba(var(--accent-rgb), 0.4)' }),
+                ? { background: 'rgba(var(--success-rgb), 0.14)', color: 'var(--success)' }
+                : { background: 'var(--accent)', color: '#fff' }),
             }}
-            className="flex items-center gap-2 px-5 font-semibold text-sm transition-all"
+            className="inline-flex items-center gap-2 px-5 font-semibold text-sm transition-all whitespace-nowrap"
           >
-            <span className={`w-2 h-2 rounded-full ${presenca ? 'animate-pulse' : ''}`}
-              style={{ background: presenca ? '#fff' : 'var(--accent)' }} />
-            {checkInLoading ? '...' : presenca ? 'Disponível' : 'Marcar presença'}
+            <i className={`ti ${presenca ? 'ti-circle-check' : 'ti-clock-check'} text-[18px] flex-shrink-0`} aria-hidden="true" />
+            {checkInLoading ? 'Atualizando...' : presenca ? 'Presença marcada' : 'Marcar presença'}
           </button>
         )}
       </div>
@@ -147,9 +148,15 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Gráficos */}
+      <div className="grid lg:grid-cols-2 gap-3">
+        <GraficoFunil leads={leads} />
+        <GraficoOrigem leads={leads} />
+      </div>
+
       {/* Fila do sorteio */}
       {fila && (
-        <div className="card">
+        <div className="card-alt">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
               <i className="ti ti-arrows-sort text-[16px]" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
@@ -191,7 +198,7 @@ export default function Dashboard() {
 }
 
 // ── Dashboard Solo ────────────────────────────────────────────
-function DashboardSolo({ usuario, cards, leadsEsfriando, proximasVisitas, leadsRecentes }) {
+function DashboardSolo({ usuario, cards, leads, leadsEsfriando, proximasVisitas, leadsRecentes }) {
   return (
     <div className="space-y-5">
       <div>
@@ -209,6 +216,12 @@ function DashboardSolo({ usuario, cards, leadsEsfriando, proximasVisitas, leadsR
             <p className="metric-number mt-1" style={{ color: c.cor }}>{c.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Gráficos */}
+      <div className="grid lg:grid-cols-2 gap-3">
+        <GraficoFunil leads={leads} />
+        <GraficoOrigem leads={leads} />
       </div>
 
       {/* Leads esfriando */}

@@ -43,6 +43,21 @@
   --blue-rgb: 53, 104, 176;
   --purple: #8E44AD;
   --purple-rgb: 142, 68, 173;
+  --teal: #0E7C86;
+  --teal-rgb: 14, 124, 134;
+  --terracotta: #C1622D;
+  --terracotta-rgb: 193, 98, 45;
+
+  /* Paleta do gráfico de pizza "Origem dos Leads" — tons complementares ao
+     vermelho da marca, nunca cinza (item 2 do ajuste). */
+  --coral: #E2725B;
+  --gold: #C9982A;
+  --bordo: #7B241C;
+
+  /* Ajuste Fase 1 (round 2): borda visível nos cards + fundo alternado entre
+     seções, pra tirar o "chapado" do branco puro contínuo. */
+  --border-color: #E5E5EA;
+  --surface-alt: #FAFAFA;
 }
 
 @layer base {
@@ -163,17 +178,26 @@
   /* ── Cards ───────────────────────────────── */
   .card {
     background-color: var(--surface);
-    border: 1px solid rgba(var(--ink-rgb), 0.06);
+    border: 1px solid var(--border-color);
     box-shadow: 0 1px 3px rgba(var(--ink-rgb), 0.04);
     border-radius: 4px;
     padding: 24px;
   }
   .card-sm {
     background-color: var(--surface);
-    border: 1px solid rgba(var(--ink-rgb), 0.06);
+    border: 1px solid var(--border-color);
     box-shadow: 0 1px 3px rgba(var(--ink-rgb), 0.04);
     border-radius: 4px;
     padding: 18px;
+  }
+  /* Variante pro "toque leve de fundo" entre seções (item 8) — mesma borda,
+     fundo levemente acinzentado em vez de branco puro. */
+  .card-alt {
+    background-color: var(--surface-alt);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(var(--ink-rgb), 0.04);
+    border-radius: 4px;
+    padding: 24px;
   }
 
   /* ── Nav (sidebar mobile / itens de menu) ─── */

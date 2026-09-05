@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import BadgeStatus from '../components/BadgeStatus';
 import KanbanLeads from '../components/KanbanLeads';
 import ImportarLeadsModal from '../components/ImportarLeadsModal';
+import { numeroWhatsapp } from '../utils/whatsapp';
 
 const VIEW_KEY = 'nrc_leads_view';
 
@@ -124,39 +125,84 @@ export default function Leads() {
           <p style={{ color: 'var(--text-muted)' }}>Nenhum lead encontrado.</p>
         </div>
       ) : (
-        <div className="grid gap-3">
-          {filtrados.map((lead) => (
-            <Link
-              to={`/leads/${lead.id}`}
-              key={lead.id}
-              className="card block transition-all"
-              style={{ textDecoration: 'none' }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(var(--ink-rgb), 0.12)')}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(var(--ink-rgb), 0.06)')}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold" style={{ color: 'var(--text)' }}>{lead.nome}</p>
-                    <BadgeStatus status={lead.status} showTemp />
-                  </div>
-                  <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--accent)' }}>
-                    {lead.empreendimento}
-                  </p>
-                  <div className="flex flex-wrap gap-4 mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span>{lead.telefone}</span>
-                    {lead.email && <span>{lead.email}</span>}
-                    {lead.corretorNome && <span>Corretor: {lead.corretorNome}</span>}
-                    <span>{lead.origem}</span>
-                  </div>
-                </div>
-                <div className="text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-                  {new Date(lead.criadoEm).toLocaleDateString('pt-BR')}
-                </div>
-              </div>
-            </Link>
-          ))}
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+          {filtrados.map((lead) => <LeadCard key={lead.id} lead={lead} usuario={usuario} />)}
         </div>
+      )}
+    </div>
+  );
+}
+
+// Card de lead (ajuste Fase 1, item 4 — grid em vez de lista simples).
+function LeadCard({ lead, usuario }) {
+  // Mesma regra de dono usada em LeadDetalhe (podeEscrever) — só o corretor
+  // responsável vê o ícone de remover (abre o fluxo de descarte existente).
+  const podeRemover = usuario?.perfil === 'corretor' && lead.corretorId === usuario?.id;
+
+  return (
+    <div className="card relative flex flex-col" style={{ padding: '18px' }}>
+      {/* Ícones de ação — canto superior direito */}
+      <div className="absolute top-3 right-3 flex items-center gap-1">
+        <Link to={`/leads/${lead.id}`} title="Editar" className="p-1.5 rounded transition-colors"
+          style={{ color: 'var(--text-faint)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}>
+          <i className="ti ti-pencil text-[15px]" aria-hidden="true" />
+        </Link>
+        {podeRemover && (
+          <Link to={`/leads/${lead.id}?descartar=1`} title="Remover" className="p-1.5 rounded transition-colors"
+            style={{ color: 'var(--text-faint)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}>
+            <i className="ti ti-trash text-[15px]" aria-hidden="true" />
+          </Link>
+        )}
+      </div>
+
+      <Link to={`/leads/${lead.id}`} className="pr-12" style={{ textDecoration: 'none' }}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-semibold" style={{ color: 'var(--text)' }}>{lead.nome}</p>
+        </div>
+        <div className="mt-1.5">
+          <BadgeStatus status={lead.descartado ? 'descartado' : lead.status} showTemp />
+        </div>
+        <p className="text-sm font-semibold mt-2.5" style={{ color: 'var(--accent)' }}>
+          {lead.empreendimento || '—'}
+        </p>
+      </Link>
+
+      <div className="mt-3 space-y-1.5 flex-1">
+        {lead.telefone && (
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <i className="ti ti-phone text-[14px] flex-shrink-0" aria-hidden="true" />
+            <span className="truncate">{lead.telefone}</span>
+          </div>
+        )}
+        {lead.email && (
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <i className="ti ti-mail text-[14px] flex-shrink-0" aria-hidden="true" />
+            <span className="truncate">{lead.email}</span>
+          </div>
+        )}
+        {lead.corretorNome && (
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-faint)' }}>
+            <i className="ti ti-user text-[14px] flex-shrink-0" aria-hidden="true" />
+            <span className="truncate">{lead.corretorNome}</span>
+          </div>
+        )}
+      </div>
+
+      {lead.telefone && (
+        <a
+          href={`https://wa.me/${numeroWhatsapp(lead.telefone)}`}
+          target="_blank" rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="mt-3 flex items-center justify-center gap-2 py-2 text-sm font-semibold transition-colors"
+          style={{ background: 'rgba(var(--success-rgb), 0.12)', color: 'var(--success)', borderRadius: '999px', textDecoration: 'none' }}
+        >
+          <i className="ti ti-brand-whatsapp text-[16px]" aria-hidden="true" />
+          WhatsApp
+        </a>
       )}
     </div>
   );

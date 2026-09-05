@@ -48,7 +48,7 @@ export default function OperadorFila() {
   return (
     <div className="space-y-5 max-w-lg">
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Fila de Distribuição</h1>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Fila de Corretores</h1>
         <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Sem acesso a dados de clientes</p>
       </div>
 

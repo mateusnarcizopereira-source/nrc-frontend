@@ -26,11 +26,17 @@ function itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas }) {
   }
 
   if (!modoSolo && ['operador', 'gerente'].includes(usuario?.perfil)) {
-    itens.push({ to: '/operador', icon: 'arrows-sort', label: 'Fila de Distribuição', grupo: null });
+    itens.push({ to: '/operador', icon: 'arrows-sort', label: 'Fila de Corretores', grupo: null });
+  }
+
+  // Ajuste Fase 1 (round 2): Agenda vira aba visível — corretor/gerente/editor.
+  if (['corretor', 'gerente', 'editor'].includes(usuario?.perfil)) {
+    itens.push({ to: '/agenda', icon: 'calendar', label: 'Agenda', grupo: null });
   }
 
   if (temPerfil('gerente')) {
-    itens.push({ to: '/empreendimentos', icon: 'building-community', label: 'Empreendimentos', grupo: 'Gestão' });
+    // Empreendimentos saiu do "Mais" e virou aba visível (ajuste Fase 1, item 5).
+    itens.push({ to: '/empreendimentos', icon: 'building-community', label: 'Empreendimentos', grupo: null });
     itens.push({ to: '/visitas', icon: 'calendar-event', label: 'Visitas', grupo: 'Gestão' });
     itens.push({ to: '/leads-descartados', icon: 'ban', label: 'Não Clientes', grupo: 'Gestão' });
     itens.push({ to: '/corretores', icon: 'user-check', label: 'Corretores', grupo: 'Gestão' });
