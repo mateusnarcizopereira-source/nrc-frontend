@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { useConfig } from '../contexts/ConfigContext';
 import BadgeStatus from '../components/BadgeStatus';
+import Avatar from '../components/Avatar';
 import SeletorEmpreendimento from '../components/SeletorEmpreendimento';
 import TarefaCard from '../components/TarefaCard';
 import { TarefaFormModal, ConcluirTarefaModal } from '../components/TarefaModais';
@@ -31,11 +32,36 @@ function fmtMoeda(v) {
   return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 }
 
+// "há 2 dias" / "há 3h" / "agora mesmo" — pro corretor sentir a urgência de
+// bater o olho, sem precisar calcular a data de entrada de cabeça (pedido
+// explícito do redesign: lead frio de 3 dias exige urgência diferente de
+// um de 10 minutos).
+function tempoRelativo(iso) {
+  if (!iso) return '';
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return 'agora mesmo';
+  if (min < 60) return `há ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `há ${h}h`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? 'há 1 dia' : `há ${d} dias`;
+}
 
-// Botão "Enviar material" (Fase 2, item 9 do redesign) — abre o WhatsApp com
-// o link do arquivo já preenchido na mensagem, pro número do próprio lead.
-// Só aparece pro corretor dono do lead (mesma regra de podeEscrever) e só
-// quando o empreendimento do lead já tem algum material anexado.
+function fmtDataHora(iso) {
+  return iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+}
+
+// Full-bleed: escapa do max-w-3xl herdado do Layout (que deixava metade da
+// tela vazia à direita) sem tocar em Layout.jsx nem em nenhuma outra
+// página — só esta, que realmente precisa da largura pras duas colunas.
+// Seguro porque o shell do app (Layout) já usa h-screen overflow-hidden no
+// <body> — não existe scrollbar no documento pra 100vw ficar impreciso.
+const breakoutStyle = { width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' };
+
+// Botão "Enviar material" — abre o WhatsApp com o link do arquivo já
+// preenchido na mensagem, pro número do próprio lead. Só aparece pro
+// corretor dono do lead e só quando o empreendimento já tem material anexado.
 function BotaoEnviarMaterial({ lead, telLimpo, materiais, empreendimentoId }) {
   const [aberto, setAberto] = useState(false);
 
@@ -50,35 +76,30 @@ function BotaoEnviarMaterial({ lead, telLimpo, materiais, empreendimentoId }) {
     setAberto(false);
   }
 
-  // Só 1 material: manda direto, sem dropdown.
+  const botaoBase = 'flex items-center gap-1.5 px-3 text-xs font-semibold transition-colors';
+  const botaoEstilo = {
+    minHeight: '34px', background: 'rgba(var(--blue-rgb), 0.10)', color: 'var(--blue)',
+    border: '1px solid rgba(var(--blue-rgb), 0.3)', borderRadius: '2px', cursor: 'pointer',
+  };
+
   if (materiais.length === 1) {
     return (
-      <button onClick={() => whatsappCom(materiais[0])}
-        className="flex items-center gap-2 px-4 text-sm font-semibold transition-colors"
-        style={{
-          minHeight: '40px', background: 'rgba(var(--blue-rgb), 0.10)', color: 'var(--blue)',
-          border: '1px solid rgba(var(--blue-rgb), 0.3)', borderRadius: '2px', cursor: 'pointer',
-        }}>
-        <i className="ti ti-file-arrow-right text-[16px]" aria-hidden="true" />
-        Enviar material
+      <button onClick={() => whatsappCom(materiais[0])} className={botaoBase} style={botaoEstilo} title="Enviar material">
+        <i className="ti ti-file-arrow-right text-[15px]" aria-hidden="true" />
+        Material
       </button>
     );
   }
 
   return (
     <div className="relative">
-      <button onClick={() => setAberto((v) => !v)}
-        className="flex items-center gap-2 px-4 text-sm font-semibold transition-colors"
-        style={{
-          minHeight: '40px', background: 'rgba(var(--blue-rgb), 0.10)', color: 'var(--blue)',
-          border: '1px solid rgba(var(--blue-rgb), 0.3)', borderRadius: '2px', cursor: 'pointer',
-        }}>
-        <i className="ti ti-file-arrow-right text-[16px]" aria-hidden="true" />
-        Enviar material
-        <i className={`ti ti-chevron-down text-[14px] transition-transform ${aberto ? 'rotate-180' : ''}`} aria-hidden="true" />
+      <button onClick={() => setAberto((v) => !v)} className={botaoBase} style={botaoEstilo} title="Enviar material">
+        <i className="ti ti-file-arrow-right text-[15px]" aria-hidden="true" />
+        Material
+        <i className={`ti ti-chevron-down text-[12px] transition-transform ${aberto ? 'rotate-180' : ''}`} aria-hidden="true" />
       </button>
       {aberto && (
-        <div className="absolute left-0 top-full mt-1 py-1.5 z-50" style={{
+        <div className="absolute right-0 top-full mt-1 py-1.5 z-50" style={{
           background: 'var(--surface)', border: '1px solid rgba(var(--ink-rgb), 0.08)',
           borderRadius: '4px', boxShadow: '0 8px 24px rgba(var(--ink-rgb), 0.12)', minWidth: '220px',
         }}>
@@ -98,66 +119,80 @@ function BotaoEnviarMaterial({ lead, telLimpo, materiais, empreendimentoId }) {
   );
 }
 
+// Botão compacto de ação do cabeçalho (Ligar/WhatsApp/E-mail) — mesmo
+// visual dos três, só muda cor/ícone/href.
+function BotaoAcaoHeader({ href, icon, label, cor, corRgb, alvo }) {
+  return (
+    <a href={href} target={alvo} rel={alvo ? 'noopener noreferrer' : undefined}
+      className="flex items-center gap-1.5 px-3 text-xs font-semibold transition-colors"
+      style={{
+        minHeight: '34px', background: `rgba(${corRgb}, 0.10)`, color: cor,
+        border: `1px solid rgba(${corRgb}, 0.3)`, borderRadius: '2px', textDecoration: 'none',
+      }}>
+      <i className={`ti ti-${icon} text-[15px]`} aria-hidden="true" />
+      {label}
+    </a>
+  );
+}
+
 export default function LeadDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { usuario, temPerfil } = useAuth();
+  const { usuario } = useAuth();
   const { modoSolo } = useConfig();
 
   const [lead, setLead] = useState(null);
-  const [aba, setAba] = useState('timeline');
 
   const [comentarios, setComentarios] = useState([]);
   const [novoComentario, setNovoComentario] = useState('');
   const [enviando, setEnviando] = useState(false);
 
   const [notas, setNotas] = useState('');
+  const [notasAbertas, setNotasAbertas] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
   const [visitas, setVisitas] = useState([]);
   const [gerentes, setGerentes] = useState([]);
   const [visitaForm, setVisitaForm] = useState({ data: '', hora: '', empreendimento: '', comentario: '', gerenteId: '' });
   const [cadastrandoVisita, setCadastrandoVisita] = useState(false);
+  const [modalVisita, setModalVisita] = useState(false);
 
   const [modalDescarte, setModalDescarte] = useState(false);
   const [motivo, setMotivo] = useState('');
   const [descartando, setDescartando] = useState(false);
   const [motivosDescarte, setMotivosDescarte] = useState([]);
 
-  // Perfil de busca (Fase 2)
-  const [perfilAberto, setPerfilAberto] = useState(true);
-  const [editandoPerfil, setEditandoPerfil] = useState(false);
+  // Perfil de busca (Fase 2) — agora dentro do grid unificado de dados
+  const [editandoDados, setEditandoDados] = useState(false);
   const [empreendimentos, setEmpreendimentos] = useState([]);
-  const [perfilForm, setPerfilForm] = useState(null);
-  const [salvandoPerfil, setSalvandoPerfil] = useState(false);
+  const [dadosForm, setDadosForm] = useState(null);
+  const [salvandoDados, setSalvandoDados] = useState(false);
 
-  // Tarefas do lead (Fase 3)
+  // Tarefas do lead
   const [tarefasLead, setTarefasLead] = useState([]);
   const [modalTarefaForm, setModalTarefaForm] = useState(null); // {} | { tarefa }
   const [modalConcluirTarefa, setModalConcluirTarefa] = useState(null);
 
-  // Materiais do empreendimento do lead (Fase 2, item 9 do redesign) — só
-  // busca pro corretor dono do lead, que é quem vê o botão de enviar.
+  // Materiais do empreendimento do lead — só pro corretor dono do lead.
   const [materiaisEmpreendimento, setMateriaisEmpreendimento] = useState([]);
+
+  // Navegação anterior/próximo — mesma lista/escopo que a tela Leads usa
+  // (o backend já filtra por perfil em GET /leads), ordenada por entrada
+  // mais recente primeiro, igual ao resto do app.
+  const [listaLeads, setListaLeads] = useState([]);
 
   const isCorretorResponsavel = usuario?.perfil === 'corretor' && lead?.corretorId === usuario?.id;
   const podeEscrever = isCorretorResponsavel;
+  const podeEditarDados = isCorretorResponsavel || usuario?.perfil === 'editor';
+  const podeEditarTarefa = ['corretor', 'gerente', 'editor'].includes(usuario?.perfil);
 
-  // Ícone de "remover" no card da listagem de Leads (ajuste Fase 1, item 4)
-  // manda pra cá com ?descartar=1 — abre direto o modal de descarte já
-  // existente (mesma permissão, mesmo fluxo, só evita duplicar o picker de
-  // motivo na listagem).
   useEffect(() => {
     if (searchParams.get('descartar') === '1' && podeEscrever && !lead?.descartado) {
       setModalDescarte(true);
       setSearchParams((p) => { p.delete('descartar'); return p; }, { replace: true });
     }
   }, [lead, podeEscrever]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Perfil de busca: corretor responsável ou editor (cobre o Modo Solo); Diretor é só-leitura
-  const podeEditarPerfil = isCorretorResponsavel || usuario?.perfil === 'editor';
-  // Tarefas: corretor/gerente/editor mexem; Diretor e Operador não
-  const podeEditarTarefa = ['corretor', 'gerente', 'editor'].includes(usuario?.perfil);
 
   function carregarTarefas() {
     api.get('/tarefas', { params: { leadId: id } }).then((r) => setTarefasLead(r.data)).catch(() => {});
@@ -188,8 +223,16 @@ export default function LeadDetalhe() {
     api.get('/tarefas', { params: { leadId: id } }).then((r) => setTarefasLead(r.data)).catch(() => {});
   }, [id]);
 
-  // Materiais do empreendimento vinculado — carrega assim que o lead chega e
-  // só se ele já tem empreendimentoId (o botão de envio some se não houver).
+  // Lista pra "anterior/próximo" — carrega 1x (mesmo escopo de sempre:
+  // corretor só vê os dele, o resto vê tudo, igual à tela Leads).
+  useEffect(() => {
+    if (!usuario) return;
+    api.get('/leads').then((r) => {
+      const ordenada = [...r.data].sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+      setListaLeads(ordenada);
+    }).catch(() => {});
+  }, [usuario]);
+
   useEffect(() => {
     if (!lead?.empreendimentoId || !podeEscrever) { setMateriaisEmpreendimento([]); return; }
     api.get(`/empreendimentos/${lead.empreendimentoId}/materiais`)
@@ -197,8 +240,12 @@ export default function LeadDetalhe() {
       .catch(() => setMateriaisEmpreendimento([]));
   }, [lead?.empreendimentoId, podeEscrever]);
 
-  function abrirEdicaoPerfil() {
-    setPerfilForm({
+  const indiceAtual = listaLeads.findIndex((l) => l.id === id);
+  const leadAnterior = indiceAtual > 0 ? listaLeads[indiceAtual - 1] : null;
+  const leadProximo = indiceAtual >= 0 && indiceAtual < listaLeads.length - 1 ? listaLeads[indiceAtual + 1] : null;
+
+  function abrirEdicaoDados() {
+    setDadosForm({
       tipologia: lead.tipologia || '',
       finalidade: lead.finalidade || '',
       formaPagamento: lead.formaPagamento || '',
@@ -207,29 +254,29 @@ export default function LeadDetalhe() {
       empreendimentoId: lead.empreendimentoId || '',
       faixaValor: { min: lead.faixaValor?.min ?? '', max: lead.faixaValor?.max ?? '' },
     });
-    setEditandoPerfil(true);
-    setPerfilAberto(true);
+    setEditandoDados(true);
   }
 
-  async function salvarPerfil(e) {
+  async function salvarDados(e) {
     e.preventDefault();
-    setSalvandoPerfil(true);
+    setSalvandoDados(true);
     try {
-      const emp = empreendimentos.find((x) => x.id === perfilForm.empreendimentoId);
-      const payload = { ...perfilForm };
+      const emp = empreendimentos.find((x) => x.id === dadosForm.empreendimentoId);
+      const payload = { ...dadosForm };
       if (emp) payload.empreendimento = emp.nome; // mantém texto em sincronia
       const r = await api.patch(`/leads/${id}/perfil`, payload);
       setLead(r.data);
-      setEditandoPerfil(false);
+      setEditandoDados(false);
     } finally {
-      setSalvandoPerfil(false);
+      setSalvandoDados(false);
     }
   }
 
   async function mudarStatus(status) {
-    if (!podeEscrever) return;
+    if (!podeEscrever || !status) return;
     const res = await api.patch(`/leads/${id}/status`, { status });
     setLead(res.data);
+    carregarComentarios(); // mudança de status vira entrada na timeline
   }
 
   async function salvarNotas() {
@@ -258,6 +305,7 @@ export default function LeadDetalhe() {
       const res = await api.post(`/leads/${id}/visitas`, visitaForm);
       setVisitas([res.data, ...visitas]);
       setVisitaForm({ data: '', hora: '', empreendimento: '', comentario: '', gerenteId: '' });
+      setModalVisita(false);
     } finally { setCadastrandoVisita(false); }
   }
 
@@ -279,527 +327,490 @@ export default function LeadDetalhe() {
 
   const telLimpo = lead.telefone?.replace(/\D/g, '');
 
-  const divider = { borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' };
+  // Timeline unificada — comentários (mudança de status já vira comentário
+  // "Estágio: X → Y" no backend), tarefas e visitas, tudo cronológico,
+  // mais recente primeiro. Cada tipo mantém sua própria aparência (a
+  // tarefa continua com concluir/editar/cancelar funcionando).
+  const timelineItens = [
+    ...comentarios.map((c) => ({ tipo: 'comentario', dataOrdenacao: c.criadoEm, item: c })),
+    ...tarefasLead.map((t) => ({ tipo: 'tarefa', dataOrdenacao: t.criadoEm, item: t })),
+    ...visitas.map((v) => ({ tipo: 'visita', dataOrdenacao: v.criadoEm || `${v.data}T${v.hora || '00:00'}`, item: v })),
+  ]
+    .filter((e) => e.dataOrdenacao)
+    .sort((a, b) => new Date(b.dataOrdenacao) - new Date(a.dataOrdenacao));
+
+  // Campos do "Dados do lead" — grid de dois por linha, unificado (dados
+  // fixos + perfil de busca), sem repetir Origem duas vezes.
+  const camposFixos = [
+    { label: 'Telefone', valor: lead.telefone },
+    { label: 'E-mail', valor: lead.email || '—' },
+  ];
+  const camposPerfil = [
+    { label: 'Empreendimento', valor: lead.empreendimento || null },
+    { label: 'Finalidade', valor: lead.finalidade },
+    { label: 'Tipologia', valor: lead.tipologia },
+    {
+      label: 'Faixa de valor',
+      valor: (lead.faixaValor && (lead.faixaValor.min != null || lead.faixaValor.max != null))
+        ? [fmtMoeda(lead.faixaValor.min), fmtMoeda(lead.faixaValor.max)].filter(Boolean).join(' — ')
+        : null,
+    },
+    { label: 'Forma de pagamento', valor: lead.formaPagamento },
+    { label: 'Prazo de compra', valor: lead.prazoCompra },
+    { label: 'Origem', valor: lead.origem },
+    { label: 'Corretor', valor: lead.corretorNome || 'Não atribuído' },
+  ];
+  const preenchidosPerfil = camposPerfil.filter((c) => c.valor).length;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
-      {/* Voltar */}
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm transition-colors"
-        style={{ color: 'var(--text-muted)' }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
-        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-      >
-        <i className="ti ti-arrow-left text-[16px]" aria-hidden="true" />
-        Voltar
-      </button>
+    <div style={breakoutStyle}>
+      <div className="mx-auto px-4 md:px-6" style={{ maxWidth: '1180px' }}>
 
-      {/* Cabeçalho */}
-      <div className="card">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>{lead.nome}</h1>
-            <p className="font-semibold text-sm mt-1" style={{ color: 'var(--accent)' }}>{lead.empreendimento}</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>
-              Entrada: {new Date(lead.criadoEm).toLocaleString('pt-BR')} · Origem: {lead.origem}
-            </p>
-          </div>
-          <BadgeStatus status={lead.descartado ? 'descartado' : lead.status} showTemp />
-        </div>
+        {/* Voltar — rola junto, fora do cabeçalho fixo */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1 text-sm transition-colors mb-3"
+          style={{ color: 'var(--text-muted)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+        >
+          <i className="ti ti-arrow-left text-[16px]" aria-hidden="true" />
+          Voltar
+        </button>
 
-        {/* Ações rápidas */}
-        {!lead.descartado && (
-          <div className="flex gap-2 mt-4 flex-wrap">
-            <a href={`tel:${telLimpo}`} className="btn-primary text-sm px-4" style={{ minHeight: '40px' }}>
-              <i className="ti ti-phone text-[16px]" aria-hidden="true" />
-              Ligar
-            </a>
-            <a
-              href={`https://wa.me/${numeroWhatsapp(telLimpo)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 text-sm font-semibold transition-colors"
-              style={{
-                minHeight: '40px',
-                background: 'rgba(var(--success-rgb), 0.12)',
-                color: 'var(--success)',
-                border: '1px solid rgba(var(--success-rgb), 0.3)',
-                borderRadius: '2px',
-                textDecoration: 'none',
-              }}
-            >
-              <i className="ti ti-brand-whatsapp text-[16px]" aria-hidden="true" />
-              WhatsApp
-            </a>
-            {lead.email && (
-              <a
-                href={`mailto:${lead.email}`}
-                className="flex items-center gap-2 px-4 text-sm font-semibold transition-colors"
-                style={{
-                  minHeight: '40px',
-                  background: 'var(--surface-2)',
-                  color: 'var(--text-secondary)',
-                  border: '1px solid rgba(var(--ink-rgb), 0.12)',
-                  borderRadius: '2px',
-                  textDecoration: 'none',
-                }}
-              >
-                <i className="ti ti-mail text-[16px]" aria-hidden="true" />
-                E-mail
-              </a>
-            )}
-            {podeEscrever && materiaisEmpreendimento.length > 0 && (
-              <BotaoEnviarMaterial lead={lead} telLimpo={telLimpo} materiais={materiaisEmpreendimento} empreendimentoId={lead.empreendimentoId} />
-            )}
-          </div>
-        )}
-
-        {lead.descartado && (
-          <div className="mt-4 p-3 rounded" style={{ background: 'var(--surface-4)', border: '1px solid rgba(var(--ink-rgb), 0.05)' }}>
-            <p className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Marcado como Não Cliente</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Motivo: {lead.motivoDescarte}</p>
-            {lead.descartadoPorNome && (
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>
-                Por {lead.descartadoPorNome} · {lead.descartadoEm && new Date(lead.descartadoEm).toLocaleDateString('pt-BR')}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Dados */}
-      <div className="card space-y-3">
-        <h2 className="font-semibold" style={{ color: 'var(--text)' }}>Dados do lead</h2>
-        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          {[
-            { label: 'Telefone', value: lead.telefone },
-            { label: 'E-mail', value: lead.email || '—' },
-            { label: 'Empreendimento', value: lead.empreendimento },
-            { label: 'Origem', value: lead.origem },
-            { label: 'Corretor', value: lead.corretorNome || 'Não atribuído' },
-          ].map(({ label, value }) => (
-            <div key={label}>
-              <dt className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>{label}</dt>
-              <dd className="font-medium mt-0.5" style={{ color: 'var(--text)' }}>{value}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-
-      {/* Perfil de Busca (Fase 2) */}
-      {(() => {
-        const campos = [
-          { label: 'Empreendimento',    valor: lead.empreendimento, preenchido: Boolean(lead.empreendimentoId || lead.empreendimento) },
-          { label: 'Tipologia',         valor: lead.tipologia,       preenchido: Boolean(lead.tipologia) },
-          { label: 'Faixa de valor',    valor: (lead.faixaValor && (lead.faixaValor.min != null || lead.faixaValor.max != null))
-              ? [fmtMoeda(lead.faixaValor.min), fmtMoeda(lead.faixaValor.max)].filter(Boolean).join(' — ')
-              : null, preenchido: Boolean(lead.faixaValor && (lead.faixaValor.min != null || lead.faixaValor.max != null)) },
-          { label: 'Finalidade',        valor: lead.finalidade,      preenchido: Boolean(lead.finalidade) },
-          { label: 'Forma de pagamento', valor: lead.formaPagamento, preenchido: Boolean(lead.formaPagamento) },
-          { label: 'Prazo de compra',   valor: lead.prazoCompra,     preenchido: Boolean(lead.prazoCompra) },
-          { label: 'Origem',            valor: lead.origem,          preenchido: Boolean(lead.origem) },
-        ];
-        const total = campos.length;
-        const preenchidos = campos.filter((c) => c.preenchido).length;
-        const pct = Math.round((preenchidos / total) * 100);
-
-        return (
-          <div className="card">
-            {/* Cabeçalho recolhível */}
-            <div className="flex items-center justify-between gap-3">
+        {/* ── Cabeçalho fixo ──────────────────────────────────── */}
+        <div className="card sticky top-12 md:top-0 z-20" style={{ boxShadow: '0 2px 10px rgba(var(--ink-rgb), 0.06)' }}>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="min-w-0 flex items-start gap-2">
               <button
-                onClick={() => setPerfilAberto((v) => !v)}
-                className="flex items-center gap-2 flex-1 text-left"
+                onClick={() => leadAnterior && navigate(`/leads/${leadAnterior.id}`)}
+                disabled={!leadAnterior}
+                title="Lead anterior"
+                className="w-7 h-7 flex items-center justify-center rounded flex-shrink-0 mt-1"
+                style={{ color: leadAnterior ? 'var(--text-tertiary)' : 'var(--text-faint)', opacity: leadAnterior ? 1 : 0.4 }}
               >
-                <i className={`ti ti-chevron-${perfilAberto ? 'down' : 'right'} text-[16px]`} style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
-                <h2 className="font-semibold" style={{ color: 'var(--text)' }}>Perfil de Busca</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ background: preenchidos === total ? 'rgba(var(--success-rgb), 0.15)' : 'rgba(var(--ink-rgb), 0.06)',
-                           color: preenchidos === total ? 'var(--success)' : 'var(--text-tertiary)' }}>
-                  {preenchidos} de {total}
-                </span>
+                <i className="ti ti-chevron-left text-[18px]" aria-hidden="true" />
               </button>
-              {podeEditarPerfil && !lead.descartado && !editandoPerfil && (
-                <button onClick={abrirEdicaoPerfil} className="text-xs px-3 py-1.5 rounded font-medium"
-                  style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>
-                  <i className="ti ti-pencil mr-1" aria-hidden="true" />Editar
-                </button>
+
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl font-bold truncate" style={{ color: 'var(--text)' }}>{lead.nome}</h1>
+                  <BadgeStatus status={lead.descartado ? 'descartado' : lead.status} showTemp />
+                </div>
+                <p className="font-semibold text-sm mt-1" style={{ color: 'var(--accent)' }}>{lead.empreendimento || 'Sem empreendimento definido'}</p>
+                <div className="flex items-center gap-2 flex-wrap mt-1 text-xs" style={{ color: 'var(--text-faint)' }}>
+                  <span title={fmtDataHora(lead.criadoEm)}>
+                    <i className="ti ti-clock text-[12px] mr-0.5" aria-hidden="true" />
+                    {tempoRelativo(lead.criadoEm)}
+                  </span>
+                  <span>·</span>
+                  <span>{lead.origem}</span>
+                  {lead.aguardandoDistribuicao && !lead.descartado && (
+                    <>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-1 font-semibold" style={{ color: 'var(--amber)' }}>
+                        <i className="ti ti-clock-pause text-[12px]" aria-hidden="true" />
+                        Aguardando distribuição
+                      </span>
+                    </>
+                  )}
+                  {lead.corretorNome && (
+                    <>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Avatar nome={lead.corretorNome} size={16} />
+                        {lead.corretorNome}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={() => leadProximo && navigate(`/leads/${leadProximo.id}`)}
+                disabled={!leadProximo}
+                title="Próximo lead"
+                className="w-7 h-7 flex items-center justify-center rounded flex-shrink-0 mt-1"
+                style={{ color: leadProximo ? 'var(--text-tertiary)' : 'var(--text-faint)', opacity: leadProximo ? 1 : 0.4 }}
+              >
+                <i className="ti ti-chevron-right text-[18px]" aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Ações compactas — sempre visíveis, não somem ao rolar (fazem
+                parte do próprio cabeçalho sticky). */}
+            {!lead.descartado && (
+              <div className="flex gap-1.5 flex-wrap flex-shrink-0">
+                <BotaoAcaoHeader href={`tel:${telLimpo}`} icon="phone" label="Ligar" cor="var(--accent-hover)" corRgb="var(--accent-rgb)" />
+                <BotaoAcaoHeader href={`https://wa.me/${numeroWhatsapp(telLimpo)}`} icon="brand-whatsapp" label="WhatsApp" cor="var(--success)" corRgb="var(--success-rgb)" alvo="_blank" />
+                {lead.email && (
+                  <BotaoAcaoHeader href={`mailto:${lead.email}`} icon="mail" label="E-mail" cor="var(--text-secondary)" corRgb="var(--ink-rgb)" />
+                )}
+                {podeEscrever && materiaisEmpreendimento.length > 0 && (
+                  <BotaoEnviarMaterial lead={lead} telLimpo={telLimpo} materiais={materiaisEmpreendimento} empreendimentoId={lead.empreendimentoId} />
+                )}
+              </div>
+            )}
+          </div>
+
+          {lead.descartado && (
+            <div className="mt-3 p-3 rounded" style={{ background: 'var(--surface-4)', border: '1px solid rgba(var(--ink-rgb), 0.05)' }}>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Marcado como Não Cliente</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Motivo: {lead.motivoDescarte}</p>
+              {lead.descartadoPorNome && (
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>
+                  Por {lead.descartadoPorNome} · {lead.descartadoEm && new Date(lead.descartadoEm).toLocaleDateString('pt-BR')}
+                </p>
               )}
             </div>
+          )}
+        </div>
 
-            {/* Barra de completude */}
-            {perfilAberto && (
-              <div className="h-1 rounded-full mt-3 mb-1" style={{ background: 'rgba(var(--ink-rgb), 0.08)' }}>
-                <div className="h-1 rounded-full transition-all"
-                  style={{ width: `${pct}%`, background: preenchidos === total ? 'var(--success)' : 'var(--accent)' }} />
+        {/* ── Duas colunas ────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 mt-4">
+
+          {/* Coluna esquerda — dados do lead, grid de 2 por linha */}
+          <div className="space-y-4 order-2 lg:order-1 min-w-0">
+            <div className="card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-semibold" style={{ color: 'var(--text)' }}>Dados do lead</h2>
+                  <span className="text-xs px-2 py-0.5 rounded-full"
+                    style={{ background: preenchidosPerfil === camposPerfil.length ? 'rgba(var(--success-rgb), 0.15)' : 'rgba(var(--ink-rgb), 0.06)',
+                             color: preenchidosPerfil === camposPerfil.length ? 'var(--success)' : 'var(--text-tertiary)' }}>
+                    {preenchidosPerfil} de {camposPerfil.length}
+                  </span>
+                </div>
+                {podeEditarDados && !lead.descartado && !editandoDados && (
+                  <button onClick={abrirEdicaoDados} className="text-xs px-3 py-1.5 rounded font-medium"
+                    style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>
+                    <i className="ti ti-pencil mr-1" aria-hidden="true" />Editar
+                  </button>
+                )}
+              </div>
+
+              {!editandoDados ? (
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                  {[...camposFixos, ...camposPerfil].map((c) => (
+                    <div key={c.label}>
+                      <dt className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>{c.label}</dt>
+                      <dd className="font-medium mt-0.5">
+                        {c.valor ? (
+                          <span style={{ color: 'var(--text)' }}>{c.valor}</span>
+                        ) : podeEditarDados && !lead.descartado ? (
+                          <button onClick={abrirEdicaoDados} style={{ color: 'var(--text-muted)' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}>
+                            — <span className="text-xs">adicionar</span>
+                          </button>
+                        ) : (
+                          <span style={{ color: 'var(--text-faint)' }}>—</span>
+                        )}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <form onSubmit={salvarDados} className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Empreendimento</label>
+                      <select className="input" value={dadosForm.empreendimentoId}
+                        onChange={(e) => setDadosForm({ ...dadosForm, empreendimentoId: e.target.value })}>
+                        <option value="">—</option>
+                        {empreendimentos.map((emp) => <option key={emp.id} value={emp.id}>{emp.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Tipologia</label>
+                      <select className="input" value={dadosForm.tipologia}
+                        onChange={(e) => setDadosForm({ ...dadosForm, tipologia: e.target.value })}>
+                        <option value="">—</option>
+                        {TIPOLOGIAS.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Faixa de valor (R$)</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="number" className="input" placeholder="Mínimo" value={dadosForm.faixaValor.min}
+                        onChange={(e) => setDadosForm({ ...dadosForm, faixaValor: { ...dadosForm.faixaValor, min: e.target.value } })} />
+                      <input type="number" className="input" placeholder="Máximo" value={dadosForm.faixaValor.max}
+                        onChange={(e) => setDadosForm({ ...dadosForm, faixaValor: { ...dadosForm.faixaValor, max: e.target.value } })} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Finalidade</label>
+                      <select className="input" value={dadosForm.finalidade}
+                        onChange={(e) => setDadosForm({ ...dadosForm, finalidade: e.target.value })}>
+                        <option value="">—</option>
+                        {FINALIDADES.map((f) => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Forma de pagamento</label>
+                      <select className="input" value={dadosForm.formaPagamento}
+                        onChange={(e) => setDadosForm({ ...dadosForm, formaPagamento: e.target.value })}>
+                        <option value="">—</option>
+                        {FORMAS_PAGAMENTO.map((f) => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Prazo de compra</label>
+                      <select className="input" value={dadosForm.prazoCompra}
+                        onChange={(e) => setDadosForm({ ...dadosForm, prazoCompra: e.target.value })}>
+                        <option value="">—</option>
+                        {PRAZOS.map((p) => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Origem</label>
+                      <select className="input" value={dadosForm.origem}
+                        onChange={(e) => setDadosForm({ ...dadosForm, origem: e.target.value })}>
+                        <option value="">—</option>
+                        {ORIGENS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-1">
+                    <button type="button" onClick={() => setEditandoDados(false)}
+                      className="flex-1 text-sm py-2 rounded font-medium"
+                      style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>
+                      Cancelar
+                    </button>
+                    <button type="submit" disabled={salvandoDados} className="flex-1 btn-primary">
+                      {salvandoDados ? 'Salvando...' : 'Salvar dados'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+
+          {/* Coluna direita — ações rápidas */}
+          <div className="space-y-4 order-1 lg:order-2 min-w-0">
+            {podeEscrever && !lead.descartado && (
+              <div className="card space-y-3">
+                <h2 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>Ações rápidas</h2>
+
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Status</label>
+                  <select className="input" value={lead.status} onChange={(e) => mudarStatus(e.target.value)}>
+                    {TEMPERATURA_OPCOES.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label} · {o.temp}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => setModalVisita(true)} className="text-xs font-medium py-2 rounded flex items-center justify-center gap-1.5"
+                    style={{ background: 'rgba(var(--purple-rgb), 0.10)', color: 'var(--purple)', border: '1px solid rgba(var(--purple-rgb), 0.25)' }}>
+                    <i className="ti ti-calendar-event text-[14px]" aria-hidden="true" />
+                    Visita
+                  </button>
+                  <button onClick={() => setModalTarefaForm({})} className="text-xs font-medium py-2 rounded flex items-center justify-center gap-1.5"
+                    style={{ background: 'rgba(var(--blue-rgb), 0.10)', color: 'var(--blue)', border: '1px solid rgba(var(--blue-rgb), 0.25)' }}>
+                    <i className="ti ti-checklist text-[14px]" aria-hidden="true" />
+                    Tarefa
+                  </button>
+                </div>
+
+                {/* Comentário rápido — sempre visível, sem procurar aba */}
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Registrar contato</label>
+                  <form onSubmit={enviarComentario} className="space-y-2">
+                    <textarea
+                      className="input min-h-[64px] resize-y text-sm"
+                      placeholder="Ex: Liguei, não atendeu. / Agendou visita para dia 25..."
+                      value={novoComentario}
+                      onChange={(e) => setNovoComentario(e.target.value)}
+                    />
+                    <button type="submit" disabled={enviando || !novoComentario.trim()} className="btn-primary w-full text-sm" style={{ minHeight: '36px' }}>
+                      {enviando ? 'Registrando...' : 'Registrar'}
+                    </button>
+                  </form>
+                </div>
               </div>
             )}
 
-            {/* Corpo */}
-            {perfilAberto && !editandoPerfil && (
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mt-3">
-                {campos.map((c) => (
-                  <div key={c.label}>
-                    <dt className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>{c.label}</dt>
-                    <dd className="font-medium mt-0.5">
-                      {c.preenchido ? (
-                        <span style={{ color: 'var(--text)' }}>{c.valor}</span>
-                      ) : podeEditarPerfil && !lead.descartado ? (
-                        <button onClick={abrirEdicaoPerfil} style={{ color: 'var(--text-muted)' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}>
-                          — <span className="text-xs">adicionar</span>
-                        </button>
-                      ) : (
-                        <span style={{ color: 'var(--text-faint)' }}>—</span>
-                      )}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-
-            {/* Edição */}
-            {perfilAberto && editandoPerfil && (
-              <form onSubmit={salvarPerfil} className="space-y-3 mt-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Empreendimento</label>
-                    <select className="input" value={perfilForm.empreendimentoId}
-                      onChange={(e) => setPerfilForm({ ...perfilForm, empreendimentoId: e.target.value })}>
-                      <option value="">—</option>
-                      {empreendimentos.map((emp) => <option key={emp.id} value={emp.id}>{emp.nome}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Tipologia</label>
-                    <select className="input" value={perfilForm.tipologia}
-                      onChange={(e) => setPerfilForm({ ...perfilForm, tipologia: e.target.value })}>
-                      <option value="">—</option>
-                      {TIPOLOGIAS.map((t) => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Faixa de valor (R$)</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <input type="number" className="input" placeholder="Mínimo" value={perfilForm.faixaValor.min}
-                      onChange={(e) => setPerfilForm({ ...perfilForm, faixaValor: { ...perfilForm.faixaValor, min: e.target.value } })} />
-                    <input type="number" className="input" placeholder="Máximo" value={perfilForm.faixaValor.max}
-                      onChange={(e) => setPerfilForm({ ...perfilForm, faixaValor: { ...perfilForm.faixaValor, max: e.target.value } })} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Finalidade</label>
-                    <select className="input" value={perfilForm.finalidade}
-                      onChange={(e) => setPerfilForm({ ...perfilForm, finalidade: e.target.value })}>
-                      <option value="">—</option>
-                      {FINALIDADES.map((f) => <option key={f} value={f}>{f}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Forma de pagamento</label>
-                    <select className="input" value={perfilForm.formaPagamento}
-                      onChange={(e) => setPerfilForm({ ...perfilForm, formaPagamento: e.target.value })}>
-                      <option value="">—</option>
-                      {FORMAS_PAGAMENTO.map((f) => <option key={f} value={f}>{f}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Prazo de compra</label>
-                    <select className="input" value={perfilForm.prazoCompra}
-                      onChange={(e) => setPerfilForm({ ...perfilForm, prazoCompra: e.target.value })}>
-                      <option value="">—</option>
-                      {PRAZOS.map((p) => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Origem</label>
-                    <select className="input" value={perfilForm.origem}
-                      onChange={(e) => setPerfilForm({ ...perfilForm, origem: e.target.value })}>
-                      <option value="">—</option>
-                      {ORIGENS.map((o) => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-1">
-                  <button type="button" onClick={() => setEditandoPerfil(false)}
-                    className="flex-1 text-sm py-2 rounded font-medium"
-                    style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>
-                    Cancelar
-                  </button>
-                  <button type="submit" disabled={salvandoPerfil} className="flex-1 btn-primary">
-                    {salvandoPerfil ? 'Salvando...' : 'Salvar perfil'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        );
-      })()}
-
-      {/* Seletor de temperatura */}
-      {podeEscrever && !lead.descartado && (
-        <div className="card">
-          <h2 className="font-semibold mb-3" style={{ color: 'var(--text)' }}>Temperatura do lead</h2>
-          <div className="flex flex-wrap gap-2">
-            {TEMPERATURA_OPCOES.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => mudarStatus(opt.value)}
-                className="flex flex-col items-start px-3 py-2 text-xs font-medium transition-all"
-                style={{
-                  borderRadius: '2px',
-                  border: '1px solid',
-                  ...(lead.status === opt.value
-                    ? { borderColor: 'var(--accent)', background: 'rgba(var(--accent-rgb), 0.12)', color: 'var(--accent-hover)' }
-                    : { borderColor: 'rgba(var(--ink-rgb), 0.10)', background: 'transparent', color: 'var(--text-muted)' }),
-                }}
-              >
-                <span>{opt.label}</span>
-                <span className="text-[10px] mt-0.5" style={{ opacity: 0.4 }}>{opt.temp}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tarefas do lead (Fase 3) */}
-      {!lead.descartado && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold" style={{ color: 'var(--text)' }}>
-              Tarefas
-              {tarefasLead.filter((t) => t.status === 'Pendente').length > 0 && (
-                <span className="text-xs ml-2" style={{ color: 'var(--text-tertiary)' }}>
-                  {tarefasLead.filter((t) => t.status === 'Pendente').length} pendente(s)
-                </span>
-              )}
-            </h2>
-            {podeEditarTarefa && (
-              <button onClick={() => setModalTarefaForm({})} className="text-xs px-3 py-1.5 rounded font-medium"
-                style={{ background: 'var(--accent)', color: '#fff' }}>
-                <i className="ti ti-plus mr-1" aria-hidden="true" />Nova
-              </button>
-            )}
-          </div>
-
-          {tarefasLead.length === 0 ? (
-            <p className="text-sm text-center py-3" style={{ color: 'var(--text-faint)' }}>Nenhuma tarefa para este lead.</p>
-          ) : (
-            <div className="space-y-2">
-              {tarefasLead.map((t) => (
-                <TarefaCard
-                  key={t.id}
-                  tarefa={t}
-                  podeEditar={podeEditarTarefa}
-                  modoSolo={modoSolo}
-                  onConcluir={setModalConcluirTarefa}
-                  onEditar={(tar) => setModalTarefaForm({ tarefa: tar })}
-                  onCancelar={cancelarTarefa}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Abas */}
-      <div className="card p-0 overflow-hidden">
-        <div className="flex" style={divider}>
-          {[
-            { key: 'timeline', label: `Timeline (${comentarios.length})` },
-            { key: 'visitas',  label: `Visitas (${visitas.length})`       },
-            ...(podeEscrever ? [{ key: 'notas', label: 'Notas' }] : []),
-          ].map((a) => (
-            <button
-              key={a.key}
-              onClick={() => setAba(a.key)}
-              className="flex-1 py-3 text-sm font-medium transition-colors"
-              style={{
-                borderBottom: '2px solid',
-                ...(aba === a.key
-                  ? { borderColor: 'var(--accent)', color: 'var(--accent)' }
-                  : { borderColor: 'transparent', color: 'var(--text-muted)' }),
-              }}
-            >
-              {a.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="p-5">
-          {/* Aba Timeline */}
-          {aba === 'timeline' && (
-            <div>
-              <form onSubmit={enviarComentario} className="flex gap-2 mb-5">
-                <input
-                  className="input flex-1"
-                  placeholder="Ex: Liguei, não atendeu. / Agendou visita para dia 25..."
-                  value={novoComentario}
-                  onChange={(e) => setNovoComentario(e.target.value)}
-                />
-                <button type="submit" disabled={enviando || !novoComentario.trim()} className="btn-primary whitespace-nowrap">
-                  {enviando ? '...' : 'Registrar'}
+            {podeEditarTarefa && lead.descartado && (
+              <div className="card">
+                <button onClick={() => setModalTarefaForm({})} className="text-sm font-medium py-2 rounded w-full flex items-center justify-center gap-1.5"
+                  style={{ background: 'rgba(var(--blue-rgb), 0.10)', color: 'var(--blue)', border: '1px solid rgba(var(--blue-rgb), 0.25)' }}>
+                  <i className="ti ti-checklist text-[14px]" aria-hidden="true" />
+                  Nova tarefa
                 </button>
-              </form>
+              </div>
+            )}
 
-              {comentarios.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: 'var(--text-faint)' }}>Nenhuma interação registrada ainda.</p>
-              ) : (
-                <div className="space-y-3">
-                  {comentarios.map((c, i) => (
-                    <div key={c.id} className="flex gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: 'var(--accent)' }} />
-                        {i < comentarios.length - 1 && (
-                          <div className="w-px flex-1 mt-1" style={{ background: 'rgba(var(--ink-rgb), 0.06)' }} />
-                        )}
-                      </div>
-                      <div className="pb-4 flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{c.autorNome}</span>
-                          <span className="text-xs" style={{ color: 'var(--text-faint)' }}>
-                            {new Date(c.criadoEm).toLocaleString('pt-BR', {
-                              day: '2-digit', month: '2-digit', year: 'numeric',
-                              hour: '2-digit', minute: '2-digit'
-                            })}
-                          </span>
-                        </div>
-                        <p className="text-sm mt-1" style={{ color: 'var(--text)' }}>{c.texto}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Aba Visitas */}
-          {aba === 'visitas' && (
-            <div className="space-y-4">
-              {podeEscrever && !lead.descartado && (
-                <form
-                  onSubmit={agendarVisita}
-                  className="space-y-3 p-4 rounded"
-                  style={{ background: 'var(--surface-4)', border: '1px solid rgba(var(--ink-rgb), 0.05)' }}
-                >
-                  <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Agendar visita</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Data</label>
-                      <input type="date" className="input" value={visitaForm.data} onChange={(e) => setVisitaForm({ ...visitaForm, data: e.target.value })} required />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Horário</label>
-                      <input type="time" className="input" value={visitaForm.hora} onChange={(e) => setVisitaForm({ ...visitaForm, hora: e.target.value })} required />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Empreendimento</label>
-                    <SeletorEmpreendimento
-                      value={visitaForm.empreendimento}
-                      onChange={(nome) => setVisitaForm({ ...visitaForm, empreendimento: nome })}
-                      podeCriar={['gerente', 'editor'].includes(usuario?.perfil)}
-                      placeholder="Buscar ou digitar empreendimento..."
+            {/* Notas — resumo livre, recolhido por padrão pra não competir
+                por espaço com as ações rápidas. */}
+            {podeEscrever && (
+              <div className="card">
+                <button onClick={() => setNotasAbertas((v) => !v)} className="flex items-center gap-2 w-full text-left">
+                  <i className={`ti ti-chevron-${notasAbertas ? 'down' : 'right'} text-[16px]`} style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
+                  <h2 className="font-semibold text-sm flex-1" style={{ color: 'var(--text)' }}>Notas</h2>
+                  {!notasAbertas && notas && <i className="ti ti-file-text text-[14px]" style={{ color: 'var(--text-faint)' }} aria-hidden="true" />}
+                </button>
+                {notasAbertas && (
+                  <div className="mt-3">
+                    <textarea
+                      className="input min-h-[100px] resize-y text-sm"
+                      placeholder="Resumo livre sobre este lead..."
+                      value={notas}
+                      onChange={(e) => setNotas(e.target.value)}
                     />
+                    <button onClick={salvarNotas} disabled={salvando} className="btn-secondary mt-2 text-sm w-full" style={{ minHeight: '36px' }}>
+                      {salvando ? 'Salvando...' : 'Salvar notas'}
+                    </button>
                   </div>
-                  <div>
-                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Gerente da visita</label>
-                    <select className="input" value={visitaForm.gerenteId} onChange={(e) => setVisitaForm({ ...visitaForm, gerenteId: e.target.value })} required>
-                      <option value="">Selecionar gerente...</option>
-                      {gerentes.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Comentário</label>
-                    <input className="input" placeholder="Observações da visita..." value={visitaForm.comentario} onChange={(e) => setVisitaForm({ ...visitaForm, comentario: e.target.value })} />
-                  </div>
-                  <button type="submit" disabled={cadastrandoVisita} className="btn-primary w-full">
-                    {cadastrandoVisita ? 'Agendando...' : 'Agendar visita'}
-                  </button>
-                </form>
-              )}
+                )}
+              </div>
+            )}
 
-              {visitas.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: 'var(--text-faint)' }}>Nenhuma visita agendada.</p>
-              ) : (
-                <div className="space-y-3">
-                  {visitas.map((v) => (
-                    <div
-                      key={v.id}
-                      className="flex gap-3 p-3 rounded"
-                      style={{ background: 'rgba(var(--accent-rgb), 0.06)', border: '1px solid rgba(var(--accent-rgb), 0.15)' }}
-                    >
-                      <div className="text-center min-w-[48px]">
-                        <p className="text-lg font-bold" style={{ color: 'var(--accent-hover)' }}>
-                          {new Date(v.data + 'T00:00').toLocaleDateString('pt-BR', { day: '2-digit' })}
-                        </p>
-                        <p className="text-xs" style={{ color: 'var(--accent)' }}>
-                          {new Date(v.data + 'T00:00').toLocaleDateString('pt-BR', { month: 'short' })}
-                        </p>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{v.empreendimento}</p>
-                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{v.hora} · Gerente: {v.gerenteNome}</p>
-                        {v.comentario && <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{v.comentario}</p>}
-                        {v.calendarioEvento?.modo === 'mock' && (
-                          <span className="text-[10px] italic" style={{ color: 'var(--text-faint)' }}>📅 Convite simulado (Google Calendar pendente)</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+            {/* Zona de atenção — discreta, dentro da coluna de ações */}
+            {podeEscrever && !lead.descartado && (
+              <div className="card" style={{ borderColor: 'rgba(var(--accent-rgb), 0.2)' }}>
+                <button
+                  onClick={() => setModalDescarte(true)}
+                  className="text-xs font-medium transition-colors w-full text-left"
+                  style={{ color: 'var(--accent-hover)' }}
+                >
+                  <i className="ti ti-ban mr-1.5" aria-hidden="true" />
+                  Marcar como Não Cliente
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
-          {/* Aba Notas */}
-          {aba === 'notas' && podeEscrever && (
+        {/* ── Histórico — largura total ───────────────────────── */}
+        <div className="card mt-4">
+          <h2 className="font-semibold mb-4" style={{ color: 'var(--text)' }}>
+            Histórico
+            {timelineItens.length > 0 && (
+              <span className="font-normal text-sm ml-2" style={{ color: 'var(--text-muted)' }}>({timelineItens.length})</span>
+            )}
+          </h2>
+
+          {timelineItens.length === 0 ? (
+            <p className="text-sm text-center py-6" style={{ color: 'var(--text-faint)' }}>Nenhuma interação registrada ainda.</p>
+          ) : (
             <div>
-              <textarea
-                className="input min-h-[140px] resize-y"
-                placeholder="Resumo livre sobre este lead — pode editar a qualquer momento..."
-                value={notas}
-                onChange={(e) => setNotas(e.target.value)}
-              />
-              <button onClick={salvarNotas} disabled={salvando} className="btn-primary mt-3">
-                {salvando ? 'Salvando...' : 'Salvar notas'}
-              </button>
+              {timelineItens.map((entry, i) => {
+                const chave = `${entry.tipo}-${entry.item.id || i}`;
+                const ehMudancaStatus = entry.tipo === 'comentario' && entry.item.texto?.startsWith('Estágio:');
+                return (
+                  <div key={chave} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0"
+                        style={{ background: ehMudancaStatus ? 'var(--blue)' : entry.tipo === 'visita' ? 'var(--purple)' : entry.tipo === 'tarefa' ? 'var(--teal)' : 'var(--accent)' }} />
+                      {i < timelineItens.length - 1 && (
+                        <div className="w-px flex-1 mt-1" style={{ background: 'rgba(var(--ink-rgb), 0.06)' }} />
+                      )}
+                    </div>
+                    <div className="pb-4 flex-1 min-w-0">
+                      {entry.tipo === 'comentario' && (
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{entry.item.autorNome}</span>
+                            <span className="text-xs" style={{ color: 'var(--text-faint)' }}>{fmtDataHora(entry.item.criadoEm)}</span>
+                          </div>
+                          <p className="text-sm mt-1" style={{ color: ehMudancaStatus ? 'var(--blue)' : 'var(--text)', fontStyle: ehMudancaStatus ? 'italic' : 'normal' }}>
+                            {entry.item.texto}
+                          </p>
+                        </div>
+                      )}
+
+                      {entry.tipo === 'tarefa' && (
+                        <TarefaCard
+                          tarefa={entry.item}
+                          podeEditar={podeEditarTarefa}
+                          modoSolo={modoSolo}
+                          onConcluir={setModalConcluirTarefa}
+                          onEditar={(tar) => setModalTarefaForm({ tarefa: tar })}
+                          onCancelar={cancelarTarefa}
+                        />
+                      )}
+
+                      {entry.tipo === 'visita' && (
+                        <div className="flex gap-3 p-3 rounded" style={{ background: 'rgba(var(--purple-rgb), 0.06)', border: '1px solid rgba(var(--purple-rgb), 0.15)' }}>
+                          <div className="text-center min-w-[44px]">
+                            <p className="text-lg font-bold" style={{ color: 'var(--purple)' }}>
+                              {new Date(entry.item.data + 'T00:00').toLocaleDateString('pt-BR', { day: '2-digit' })}
+                            </p>
+                            <p className="text-xs" style={{ color: 'var(--purple)' }}>
+                              {new Date(entry.item.data + 'T00:00').toLocaleDateString('pt-BR', { month: 'short' })}
+                            </p>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Visita · {entry.item.empreendimento}</p>
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{entry.item.hora} · Gerente: {entry.item.gerenteNome}</p>
+                            {entry.item.comentario && <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{entry.item.comentario}</p>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       </div>
 
-      {/* Zona de descarte */}
-      {podeEscrever && !lead.descartado && (
-        <div
-          className="card"
-          style={{ borderColor: 'rgba(var(--accent-rgb), 0.25)' }}
-        >
-          <h2 className="font-semibold mb-2 text-sm" style={{ color: 'var(--accent-hover)' }}>Zona de atenção</h2>
-          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-            Esta ação marca o lead como "Não Cliente" e o remove do funil ativo. É irreversível.
-          </p>
-          <button
-            onClick={() => setModalDescarte(true)}
-            className="px-4 py-2 text-sm font-medium transition-colors"
-            style={{
-              borderRadius: '2px',
-              border: '1px solid rgba(var(--accent-rgb), 0.4)',
-              color: 'var(--accent-hover)',
-              background: 'transparent',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.1)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          >
-            Marcar como Não Cliente
-          </button>
+      {/* Modal: agendar visita */}
+      {modalVisita && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="w-full max-w-md p-6 rounded" style={{ background: 'var(--surface)', border: '1px solid rgba(var(--ink-rgb), 0.08)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text)' }}>Agendar visita</h3>
+            <form onSubmit={agendarVisita} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Data</label>
+                  <input type="date" className="input" value={visitaForm.data} onChange={(e) => setVisitaForm({ ...visitaForm, data: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Horário</label>
+                  <input type="time" className="input" value={visitaForm.hora} onChange={(e) => setVisitaForm({ ...visitaForm, hora: e.target.value })} required />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Empreendimento</label>
+                <SeletorEmpreendimento
+                  value={visitaForm.empreendimento}
+                  onChange={(nome) => setVisitaForm({ ...visitaForm, empreendimento: nome })}
+                  podeCriar={['gerente', 'editor'].includes(usuario?.perfil)}
+                  placeholder="Buscar ou digitar empreendimento..."
+                />
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Gerente da visita</label>
+                <select className="input" value={visitaForm.gerenteId} onChange={(e) => setVisitaForm({ ...visitaForm, gerenteId: e.target.value })} required>
+                  <option value="">Selecionar gerente...</option>
+                  {gerentes.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Comentário</label>
+                <input className="input" placeholder="Observações da visita..." value={visitaForm.comentario} onChange={(e) => setVisitaForm({ ...visitaForm, comentario: e.target.value })} />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setModalVisita(false)}
+                  className="flex-1 text-sm py-2 rounded font-medium"
+                  style={{ background: 'rgba(var(--ink-rgb), 0.06)', color: 'var(--text)' }}>
+                  Cancelar
+                </button>
+                <button type="submit" disabled={cadastrandoVisita} className="flex-1 btn-primary">
+                  {cadastrandoVisita ? 'Agendando...' : 'Agendar visita'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -862,7 +873,7 @@ export default function LeadDetalhe() {
         </div>
       )}
 
-      {/* Modais de tarefa (Fase 3) */}
+      {/* Modais de tarefa */}
       {modalTarefaForm && lead && (
         <TarefaFormModal
           tarefa={modalTarefaForm.tarefa}
