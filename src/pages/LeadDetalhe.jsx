@@ -9,6 +9,7 @@ import SeletorEmpreendimento from '../components/SeletorEmpreendimento';
 import TarefaCard from '../components/TarefaCard';
 import { TarefaFormModal, ConcluirTarefaModal } from '../components/TarefaModais';
 import { numeroWhatsapp } from '../utils/whatsapp';
+import { textoAlerta, corAlerta } from '../utils/alertaLead';
 
 const TEMPERATURA_OPCOES = [
   { value: 'tentando_contato', label: 'Tentando Contato', temp: 'FRIO'       },
@@ -433,12 +434,36 @@ export default function LeadDetalhe() {
                   <span>{lead.origem}</span>
                   <span>·</span>
                   {lead.primeiroContatoEm ? (
-                    <span title={fmtDataHora(lead.primeiroContatoEm)}>
-                      <i className="ti ti-phone-check text-[12px] mr-0.5" aria-hidden="true" />
-                      Primeiro contato: {tempoRelativo(lead.primeiroContatoEm)}
-                    </span>
-                  ) : !lead.descartado ? (
-                    <span className="inline-flex items-center gap-1 font-semibold" style={{ color: 'var(--amber)' }}>
+                    <>
+                      <span title={fmtDataHora(lead.primeiroContatoEm)}>
+                        <i className="ti ti-phone-check text-[12px] mr-0.5" aria-hidden="true" />
+                        Primeiro contato: {tempoRelativo(lead.primeiroContatoEm)}
+                      </span>
+                      {lead.alerta?.tipo === 'parado' && !lead.descartado && (() => {
+                        const c = corAlerta(lead.alerta);
+                        return (
+                          <>
+                            <span>·</span>
+                            <span className="inline-flex items-center gap-1 font-semibold" style={{ color: c.cor }}>
+                              <i className={`ti ti-${c.icone} text-[12px]`} aria-hidden="true" />
+                              {textoAlerta(lead.alerta)}
+                            </span>
+                          </>
+                        );
+                      })()}
+                    </>
+                  ) : !lead.descartado && lead.alerta?.tipo === 'sem_contato' ? (() => {
+                    // Já passou do limite configurado (ex.: 2h) — mesmo texto/cor
+                    // que dispara o push, pra nunca divergir do que alerta o corretor.
+                    const c = corAlerta(lead.alerta);
+                    return (
+                      <span className="inline-flex items-center gap-1 font-semibold" style={{ color: c.cor }}>
+                        <i className={`ti ti-${c.icone} text-[12px]`} aria-hidden="true" />
+                        {textoAlerta(lead.alerta)}
+                      </span>
+                    );
+                  })() : !lead.descartado ? (
+                    <span className="inline-flex items-center gap-1" style={{ color: 'var(--text-faint)' }}>
                       <i className="ti ti-phone-off text-[12px]" aria-hidden="true" />
                       Sem contato registrado
                     </span>

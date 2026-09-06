@@ -45,7 +45,8 @@ function NumInput({ valor, onChange, sufixo }) {
 function resumoExec(e) {
   const partes = [];
   if (e.esfriados) partes.push(`${e.esfriados} esfriado(s)`);
-  if (e.alertasParado) partes.push(`${e.alertasParado} alerta(s)`);
+  if (e.alertasSemContato) partes.push(`${e.alertasSemContato} sem contato`);
+  if (e.alertasParado) partes.push(`${e.alertasParado} parado(s)`);
   if (e.reativados) partes.push(`${e.reativados} reativado(s)`);
   if (e.primeirosContatos) partes.push(`${e.primeirosContatos} 1º contato(s)`);
   if (e.tarefasVencendo) partes.push(`${e.tarefasVencendo} venc.`);
@@ -112,8 +113,16 @@ export default function AutomacoesPainel() {
         </LinhaRegra>
 
         <LinhaRegra
+          titulo="Alerta: aguardando primeiro contato"
+          descricao="Notifica o corretor quando o lead ainda não teve o primeiro contato registrado."
+          ativo={cfg.alertaSemContato.ativo}
+          onToggle={(v) => set('alertaSemContato', 'ativo', v)}>
+          <NumInput valor={cfg.alertaSemContato.horas} onChange={(v) => set('alertaSemContato', 'horas', v)} sufixo="horas sem contato" />
+        </LinhaRegra>
+
+        <LinhaRegra
           titulo="Alerta de lead parado"
-          descricao="Notifica o corretor responsável sobre lead sem interação."
+          descricao="Notifica o corretor sobre lead (já com primeiro contato) sem nenhuma interação."
           ativo={cfg.alertaParado.ativo}
           onToggle={(v) => set('alertaParado', 'ativo', v)}>
           <NumInput valor={cfg.alertaParado.dias} onChange={(v) => set('alertaParado', 'dias', v)} sufixo="dias sem interação" />

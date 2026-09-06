@@ -6,11 +6,18 @@ import BadgeStatus from '../components/BadgeStatus';
 import KanbanLeads from '../components/KanbanLeads';
 import ImportarLeadsModal from '../components/ImportarLeadsModal';
 import { numeroWhatsapp } from '../utils/whatsapp';
+import { textoAlerta, corAlerta } from '../utils/alertaLead';
 
 const VIEW_KEY = 'nrc_leads_view';
 
 const FILTROS = [
   { key: 'todos',             label: 'Todos'              },
+  // "Precisam de atenção" (item novo) — não é status, é o campo `alerta`
+  // (calculado no backend, mesma config que dispara o push) — filtra
+  // client-side, junto com os outros, sem precisar de outra tela. Pra
+  // gerente/editor (que já veem os leads de todos os corretores), isso
+  // sozinho já cobre "visão de todos os leads parados".
+  { key: 'atencao',           label: 'Precisam de atenção' },
   { key: 'tentando_contato',  label: 'Tentando Contato'   },
   { key: 'material_enviado',  label: 'Material Enviado'   },
   { key: 'sem_resposta',      label: 'Sem Resposta'       },
@@ -40,7 +47,7 @@ export default function Leads() {
   useEffect(() => { carregar(); }, []);
 
   const filtrados = leads.filter((l) => {
-    const matchStatus = filtro === 'todos' || l.status === filtro;
+    const matchStatus = filtro === 'todos' || (filtro === 'atencao' ? Boolean(l.alerta) : l.status === filtro);
     const matchBusca  = !busca || [l.nome, l.telefone, l.empreendimento, l.corretorNome]
       .some((v) => v?.toLowerCase().includes(busca.toLowerCase()));
     return matchStatus && matchBusca;
@@ -96,20 +103,25 @@ export default function Leads() {
         />
         {view === 'lista' && (
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {FILTROS.map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setFiltro(f.key)}
-                className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors"
-                style={
-                  filtro === f.key
-                    ? { background: 'var(--accent)', color: '#fff', border: '1px solid transparent' }
-                    : { background: 'var(--surface-2)', border: '1px solid rgba(var(--ink-rgb), 0.10)', color: 'var(--text-tertiary)' }
-                }
-              >
-                {f.label}
-              </button>
-            ))}
+            {FILTROS.map((f) => {
+              const contagemAtencao = f.key === 'atencao' ? leads.filter((l) => l.alerta).length : null;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setFiltro(f.key)}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors"
+                  style={
+                    filtro === f.key
+                      ? { background: 'var(--accent)', color: '#fff', border: '1px solid transparent' }
+                      : f.key === 'atencao' && contagemAtencao > 0
+                        ? { background: 'rgba(var(--accent-rgb), 0.10)', border: '1px solid rgba(var(--accent-rgb), 0.3)', color: 'var(--accent)' }
+                        : { background: 'var(--surface-2)', border: '1px solid rgba(var(--ink-rgb), 0.10)', color: 'var(--text-tertiary)' }
+                  }
+                >
+                  {f.label}{contagemAtencao ? ` (${contagemAtencao})` : ''}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -165,6 +177,19 @@ function LeadCard({ lead, usuario }) {
         </div>
         <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
           <BadgeStatus status={lead.descartado ? 'descartado' : lead.status} showTemp />
+          {lead.alerta && !lead.descartado && (() => {
+            const c = corAlerta(lead.alerta);
+            return (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                style={{ background: `rgba(${c.corRgb}, 0.14)`, color: c.cor }}
+                title={lead.alerta.tipo === 'sem_contato' ? 'Sem primeiro contato registrado' : 'Sem interação recente'}
+              >
+                <i className={`ti ti-${c.icone} text-[12px]`} aria-hidden="true" />
+                {textoAlerta(lead.alerta)}
+              </span>
+            );
+          })()}
           {lead.aguardandoDistribuicao && !lead.descartado && (
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
