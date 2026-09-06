@@ -21,6 +21,7 @@ import CampanhaDiscador from './pages/CampanhaDiscador';
 import Empreendimentos from './pages/Empreendimentos';
 import Tarefas from './pages/Tarefas';
 import Agenda from './pages/Agenda';
+import Notificacoes from './pages/Notificacoes';
 import Layout from './components/Layout';
 import InstallBanner from './components/InstallBanner';
 import NotificacoesPushPrompt from './components/NotificacoesPushPrompt';
@@ -74,6 +75,8 @@ export default function App() {
               <Route path="empreendimentos" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Empreendimentos /></Privado>} />
               <Route path="tarefas" element={<Privado bloqueados={SEM_LEADS}><Tarefas /></Privado>} />
               <Route path="agenda" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Agenda /></Privado>} />
+              {/* Sem allow-list — visível pra todos os perfis, como pedido. */}
+              <Route path="notificacoes" element={<Notificacoes />} />
               <Route path="relatorios" element={<Privado perfilMinimo="gerente"><Relatorios /></Privado>} />
               <Route path="god" element={<Privado perfilMinimo="editor"><GodPainel /></Privado>} />
               <Route path="clientes" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Clientes /></Privado>} />

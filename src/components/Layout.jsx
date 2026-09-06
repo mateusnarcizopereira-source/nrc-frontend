@@ -21,6 +21,10 @@ function itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas }) {
   const perfil = usuario?.perfil;
   const itens = [
     { to: '/', icon: 'layout-dashboard', label: 'Dashboard', end: true, grupo: null },
+    // Notificações — aba visível pra TODOS os perfis (espelha App.jsx, rota
+    // sem allow-list nenhuma), diferente de todo o resto abaixo que varia
+    // por perfil.
+    { to: '/notificacoes', icon: 'bell-ringing', label: 'Notificações', grupo: null },
   ];
 
   if (perfil !== 'operador') {
