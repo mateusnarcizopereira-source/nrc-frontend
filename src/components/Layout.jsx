@@ -72,10 +72,13 @@ function itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas }) {
   } else if (temPerfil('gerente')) {
     // Diretor (único perfil que chega aqui: acima de gerente, mas não editor)
     // — grupo "Gestão" no Mais, exatamente como era antes deste ajuste.
+    // "Corretores" NÃO entra aqui (achado ao corrigir o link morto do
+    // gerente): diretor é só-leitura no sistema e nunca teve acesso à
+    // rota — o item ficava no menu sem levar a lugar nenhum, mesmo bug
+    // que o gerente tinha, só que pra outro perfil.
     itens.push({ to: '/empreendimentos', icon: 'building-community', label: 'Empreendimentos', grupo: 'Gestão' });
     itens.push({ to: '/visitas', icon: 'calendar-event', label: 'Visitas', grupo: 'Gestão' });
     itens.push({ to: '/leads-descartados', icon: 'ban', label: 'Não Clientes', grupo: 'Gestão' });
-    itens.push({ to: '/corretores', icon: 'user-check', label: 'Corretores', grupo: 'Gestão' });
     itens.push({ to: '/relatorios', icon: 'chart-bar', label: 'Relatórios', grupo: 'Gestão' });
     itens.push({ to: '/motivos-descarte', icon: 'adjustments-horizontal', label: 'Motivos Descarte', grupo: 'Gestão' });
   }

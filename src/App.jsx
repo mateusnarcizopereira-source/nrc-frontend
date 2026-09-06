@@ -35,6 +35,12 @@ const PODE_CLIENTES_CAMPANHAS = ['corretor', 'gerente', 'editor'];
 // Antes era perfilMinimo="operador" (hierarquia), que também deixava diretor
 // passar; agora é explícito e diretor fica de fora, como pedido.
 const PODE_FILA = ['operador', 'corretor', 'gerente', 'editor'];
+// Allow-list de Corretores — espelha o backend (exigirPerfis em
+// POST/PATCH /usuarios). Explícita, não hierárquica — diretor fica de
+// fora mesmo estando "acima" de gerente (só-leitura no sistema, como
+// pedido); gerente só gerencia conta corretor (2º degrau dentro do
+// controller do backend).
+const PODE_CORRETORES = ['gerente', 'editor'];
 
 function Privado({ children, perfilMinimo, perfisPermitidos, bloqueados }) {
   const { usuario, carregando, temPerfil } = useAuth();
@@ -69,7 +75,7 @@ export default function App() {
               <Route path="leads-descartados" element={<Privado perfilMinimo="gerente"><LeadsDescartados /></Privado>} />
               <Route path="operador" element={<Privado perfisPermitidos={PODE_FILA}><OperadorFila /></Privado>} />
               <Route path="motivos-descarte" element={<Privado perfilMinimo="gerente"><MotivoDescarte /></Privado>} />
-              <Route path="corretores" element={<Privado perfisPermitidos={['editor']}><Corretores /></Privado>} />
+              <Route path="corretores" element={<Privado perfisPermitidos={PODE_CORRETORES}><Corretores /></Privado>} />
               {/* Leitura liberada pro corretor também (API já não restringia GET por
                   perfil) — edição/materiais continuam só gerente/editor, resolvido
                   dentro de Empreendimentos.jsx (podeEditar). */}

@@ -5,16 +5,26 @@ import { useAuth } from '../contexts/AuthContext';
 const PERFIS = ['corretor', 'operador', 'gerente', 'diretor', 'editor'];
 
 export default function Corretores() {
-  const { temPerfil } = useAuth();
+  const { usuario } = useAuth();
+  // Allow-list explícita (espelha PODE_CORRETORES em App.jsx e a rota no
+  // backend) — gerente só gerencia conta corretor, nunca perfil/senha de
+  // ninguém (2º degrau garantido no backend; aqui é só a experiência da
+  // tela seguir o mesmo limite, pra não oferecer algo que vai dar 403).
+  const ehGerente = usuario?.perfil === 'gerente';
+  const podeGerenciar = ['gerente', 'editor'].includes(usuario?.perfil);
+  // Gerente só vê corretor (rota /corretores já filtra isso no backend);
+  // editor continua vendo todo mundo (rota /usuarios), sem mudança.
+  const PERFIS_DISPONIVEIS = ehGerente ? ['corretor'] : PERFIS;
+
   const [usuarios, setUsuarios] = useState([]);
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({ nome: '', email: '', perfil: 'corretor', senha: '' });
   const [erro, setErro] = useState('');
 
-  useEffect(() => { carregarUsuarios(); }, []);
+  useEffect(() => { carregarUsuarios(); }, [ehGerente]);
 
   async function carregarUsuarios() {
-    const res = await api.get('/usuarios');
+    const res = await api.get(ehGerente ? '/corretores' : '/usuarios');
     setUsuarios(res.data);
   }
 
@@ -39,9 +49,9 @@ export default function Corretores() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Usuários</h1>
-        {temPerfil('editor') && (
-          <button onClick={() => setModal(true)} className="btn-primary">+ Novo usuário</button>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>{ehGerente ? 'Corretores' : 'Usuários'}</h1>
+        {podeGerenciar && (
+          <button onClick={() => setModal(true)} className="btn-primary">+ Novo {ehGerente ? 'corretor' : 'usuário'}</button>
         )}
       </div>
 
@@ -91,7 +101,7 @@ export default function Corretores() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  {temPerfil('editor') && (
+                  {podeGerenciar && (
                     <button
                       onClick={() => toggleAtivo(u)}
                       className="text-xs underline transition-colors"
@@ -134,16 +144,26 @@ export default function Corretores() {
                   />
                 </div>
               ))}
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>Perfil</label>
-                <select
-                  className="input"
-                  value={form.perfil}
-                  onChange={(e) => setForm({ ...form, perfil: e.target.value })}
-                >
-                  {PERFIS.map((p) => <option key={p} value={p} className="capitalize">{p}</option>)}
-                </select>
-              </div>
+              {ehGerente ? (
+                // Gerente só cria corretor — nem mostra a escolha (o
+                // backend também trava isso, mesmo que alguém chame a
+                // API direto; aqui é só não oferecer uma opção que vai
+                // dar 403).
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Perfil: <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>Corretor</span>
+                </p>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>Perfil</label>
+                  <select
+                    className="input"
+                    value={form.perfil}
+                    onChange={(e) => setForm({ ...form, perfil: e.target.value })}
+                  >
+                    {PERFIS_DISPONIVEIS.map((p) => <option key={p} value={p} className="capitalize">{p}</option>)}
+                  </select>
+                </div>
+              )}
               {erro && <p className="text-sm" style={{ color: 'var(--accent-hover)' }}>{erro}</p>}
               <div className="flex gap-2 pt-2">
                 <button type="submit" className="btn-primary flex-1">Criar</button>
