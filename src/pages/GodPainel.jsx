@@ -286,21 +286,15 @@ export default function GodPainel() {
   const [togglingModo, setTogglingModo] = useState(false);
 
   const [config, setConfig] = useState(null);
-  const [fila, setFila] = useState(null);
+  const [salvandoConfig, setSalvandoConfig] = useState(false);
   const [simLoading, setSimLoading] = useState(false);
   const [simMsg, setSimMsg] = useState('');
-  const [sorteioLoading, setSorteioLoading] = useState(false);
-  const [periodo, setPeriodo] = useState('manual');
 
   useEffect(() => { carregarDados(); }, []);
 
   async function carregarDados() {
-    const [configRes, filaRes] = await Promise.all([
-      api.get('/sorteio/config'),
-      api.get('/sorteio/fila').catch(() => ({ data: null })),
-    ]);
+    const configRes = await api.get('/sorteio/config');
     setConfig(configRes.data);
-    setFila(filaRes.data);
   }
 
   async function toggleModoSolo(valor) {
@@ -308,20 +302,17 @@ export default function GodPainel() {
     try { await setModoSolo(valor); } finally { setTogglingModo(false); }
   }
 
-  async function salvarConfig() {
-    await api.put('/sorteio/config', config);
-    alert('Configuração salva e agendador atualizado!');
-  }
-
-  async function dispararSorteio() {
-    setSorteioLoading(true);
+  // Distribuição automática: interruptor geral — desativado, nenhum lead
+  // novo é atribuído sozinho (todos ficam represados, como se fora da
+  // janela de atendimento). Horários de check-in/sorteio deixaram de ser
+  // configuráveis aqui (fixos em config/janelaFila.js do backend, um
+  // lugar só, sem espalhar pelo código nem expor como ajuste).
+  async function toggleDistribuicaoAtiva(valor) {
+    setSalvandoConfig(true);
     try {
-      const res = await api.post('/sorteio/disparar', { periodo });
-      setFila(res.data);
-      alert(`Sorteio "${periodo}" realizado com sucesso!`);
-    } catch (e) {
-      alert(e.response?.data?.erro || 'Erro ao disparar sorteio.');
-    } finally { setSorteioLoading(false); }
+      const res = await api.put('/sorteio/config', { distribuicaoAtiva: valor });
+      setConfig(res.data.config);
+    } finally { setSalvandoConfig(false); }
   }
 
   async function simularLead() {
@@ -333,20 +324,6 @@ export default function GodPainel() {
     } catch (e) {
       setSimMsg('Erro ao simular lead: ' + (e.response?.data?.erro || e.message));
     } finally { setSimLoading(false); }
-  }
-
-  function atualizarHorario(idx, campo, valor) {
-    const novos = [...config.horarios];
-    novos[idx] = { ...novos[idx], [campo]: valor };
-    setConfig({ ...config, horarios: novos });
-  }
-
-  function adicionarHorario() {
-    setConfig({ ...config, horarios: [...config.horarios, { label: 'novo', hora: '10:00' }] });
-  }
-
-  function removerHorario(idx) {
-    setConfig({ ...config, horarios: config.horarios.filter((_, i) => i !== idx) });
   }
 
   if (!config) return (
@@ -386,69 +363,23 @@ export default function GodPainel() {
       {/* ── Gestão de usuários ──────────────────────────────── */}
       <GestaoUsuarios />
 
-      {/* ── Configuração de sorteios ─────────────────────────── */}
-      <div className="card space-y-4">
-        <h2 className="font-bold" style={{ color: 'var(--text)' }}>Horários dos sorteios</h2>
-        {config.horarios.map((h, i) => (
-          <div key={i} className="flex items-center gap-3 flex-wrap">
-            <input className="input w-32" placeholder="Label (ex: manha)"
-              value={h.label} onChange={(e) => atualizarHorario(i, 'label', e.target.value)} />
-            <input type="time" className="input w-32"
-              value={h.hora} onChange={(e) => atualizarHorario(i, 'hora', e.target.value)} />
-            <button onClick={() => removerHorario(i)}
-              className="text-sm font-medium" style={{ color: 'var(--accent-hover)' }}>
-              Remover
-            </button>
+      {/* ── Fila do dia ───────────────────────────────────────
+          Horários de check-in (09:00-09:59) e sorteio (10:00) deixaram de
+          ser configuráveis aqui — fixos em config/janelaFila.js no
+          backend, um lugar só. Ordem sorteada, próximo, quem ficou de
+          fora e os controles de incluir/mover ficam na tela "Fila". Aqui
+          só o interruptor geral. */}
+      <div className="card">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h2 className="font-bold" style={{ color: 'var(--text)' }}>Distribuição automática</h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
+              Desativada, nenhum lead novo é atribuído sozinho — todos ficam represados, aguardando.
+              Check-in (09:00-09:59) e sorteio da fila (10:00) continuam em <a href="/operador" className="underline">Fila</a>.
+            </p>
           </div>
-        ))}
-        <button onClick={adicionarHorario} className="btn-secondary text-sm">+ Horário</button>
-
-        <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          <input type="checkbox" checked={config.distribuicaoAtiva}
-            onChange={(e) => setConfig({ ...config, distribuicaoAtiva: e.target.checked })}
-            className="rounded accent-[var(--accent)]" />
-          Distribuição automática ativa
-        </label>
-
-        <div className="flex items-center gap-2">
-          <label className="text-sm" style={{ color: 'var(--text-secondary)' }}>Tolerância (min):</label>
-          <input type="number" className="input w-24" value={config.toleranciaMinutos}
-            onChange={(e) => setConfig({ ...config, toleranciaMinutos: parseInt(e.target.value) })}
-            min={0} />
+          <Toggle ativo={config.distribuicaoAtiva} onChange={toggleDistribuicaoAtiva} carregando={salvandoConfig} />
         </div>
-
-        <button onClick={salvarConfig} className="btn-primary">Salvar configuração</button>
-      </div>
-
-      {/* ── Sorteio manual ──────────────────────────────────── */}
-      <div className="card space-y-3">
-        <h2 className="font-bold" style={{ color: 'var(--text)' }}>Disparar sorteio manualmente</h2>
-        <div className="flex items-center gap-3 flex-wrap">
-          <input className="input w-40" placeholder="Período (ex: manha)"
-            value={periodo} onChange={(e) => setPeriodo(e.target.value)} />
-          <button onClick={dispararSorteio} disabled={sorteioLoading} className="btn-primary">
-            {sorteioLoading ? 'Sorteando...' : 'Disparar sorteio'}
-          </button>
-        </div>
-
-        {fila && fila.ordem && (
-          <div>
-            <p className="text-sm mb-2" style={{ color: 'var(--text-tertiary)' }}>Fila atual — {fila.periodo}:</p>
-            <div className="flex flex-wrap gap-2">
-              {(() => {
-                const pos = fila.posicaoAtual % fila.ordem.length;
-                return [...fila.ordem.slice(pos), ...fila.ordem.slice(0, pos)].map((c, i) => (
-                  <div key={c.corretorId} className="px-3 py-1 rounded-full text-xs font-medium"
-                    style={i === 0
-                      ? { background: 'var(--accent)', color: '#fff' }
-                      : { background: 'var(--surface-2)', color: 'var(--text-tertiary)' }}>
-                    #{i + 1} {c.corretorNome}
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Simulador de lead ───────────────────────────────── */}

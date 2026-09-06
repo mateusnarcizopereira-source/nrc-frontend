@@ -6,6 +6,7 @@ import { conectarSocket } from '../services/socket';
 import api from '../services/api';
 import BadgeStatus from '../components/BadgeStatus';
 import { GraficoFunil, GraficoOrigem } from '../components/DashboardCharts';
+import { dentroDaJanelaCheckin, checkinAindaNaoAbriu } from '../utils/janelaFila';
 
 function iniciais(nome) {
   return nome?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?';
@@ -24,13 +25,37 @@ function fmtHora(iso) {
   return iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
 }
 
-// Botão de presença (ajuste round 4, item 1) — menor e discreto, não mais
-// uma pílula vermelha grande de ação destrutiva. Ausente = neutro (branco/
-// borda cinza); presente = verde suave, com a hora real do check-in; no
-// hover do estado presente, o texto avisa a ação ("Sair da fila").
+// Botão de presença — fila fechada com janela: só dá pra bater ponto
+// 09:00-09:59 Brasília, e bater ponto NÃO distribui lead na hora (só
+// marca presença — a fila fecha e é sorteada às 10h, ver tela "Fila").
+// Fora da janela, vira uma pílula informativa (não clicável) com mensagem
+// clara — o backend sempre revalida de qualquer forma, isso aqui é só UX.
 function BotaoPresenca({ presencaInfo, loading, onToggle }) {
   const [hover, setHover] = useState(false);
   const presente = Boolean(presencaInfo);
+  const podeClicar = dentroDaJanelaCheckin();
+
+  if (!podeClicar) {
+    const mensagem = presente
+      ? `Na fila · desde ${fmtHora(presencaInfo.horaCheckIn)}`
+      : (checkinAindaNaoAbriu() ? 'Check-in abre às 09:00' : 'Check-in encerrado às 09:59');
+    const titulo = presente
+      ? 'A fila de hoje já fechou — fale com o administrador pra sair.'
+      : (checkinAindaNaoAbriu() ? 'Check-in abre às 09:00.' : 'Check-in encerrado às 09:59. Fale com o administrador.');
+    const estiloInfo = presente
+      ? { background: 'rgba(var(--success-rgb), 0.12)', color: 'var(--success)', border: '1px solid rgba(var(--success-rgb), 0.25)' }
+      : { background: 'var(--surface-2)', color: 'var(--text-faint)', border: '1px solid var(--border-color)' };
+    return (
+      <span
+        title={titulo}
+        style={{ height: '32px', borderRadius: '999px', ...estiloInfo, cursor: 'default' }}
+        className="inline-flex items-center gap-1.5 px-3 font-medium text-xs whitespace-nowrap"
+      >
+        <i className={`ti ${presente ? 'ti-circle-check' : 'ti-lock'} text-[14px] flex-shrink-0`} aria-hidden="true" />
+        {mensagem}
+      </span>
+    );
+  }
 
   const estilo = presente
     ? { background: 'rgba(var(--success-rgb), 0.12)', color: 'var(--success)', border: '1px solid rgba(var(--success-rgb), 0.25)' }
@@ -67,6 +92,7 @@ export default function Dashboard() {
   const [presencaInfo, setPresencaInfo] = useState(null);
   const [fila, setFila] = useState(null);
   const [checkInLoading, setCheckInLoading] = useState(false);
+  const [presencaErro, setPresencaErro] = useState('');
 
   useEffect(() => {
     carregarDados();
@@ -91,10 +117,10 @@ export default function Dashboard() {
   async function carregarDados() {
     const [leadsRes, filaRes] = await Promise.all([
       api.get('/leads').catch(() => ({ data: [] })),
-      api.get('/sorteio/fila').catch(() => ({ data: null })),
+      api.get('/sorteio/fila-do-dia').catch(() => ({ data: null })),
     ]);
     setLeads(leadsRes.data);
-    setFila(filaRes.data?.ordem ? filaRes.data : null);
+    setFila(filaRes.data?.ordem?.length ? filaRes.data : null);
   }
 
   // Bug corrigido: presença era só useState local (sempre false no F5,
@@ -111,12 +137,13 @@ export default function Dashboard() {
   }, [usuario?.id, usuario?.perfil]);
 
   async function carregarFila() {
-    const res = await api.get('/sorteio/fila').catch(() => ({ data: null }));
-    setFila(res.data?.ordem ? res.data : null);
+    const res = await api.get('/sorteio/fila-do-dia').catch(() => ({ data: null }));
+    setFila(res.data?.ordem?.length ? res.data : null);
   }
 
   async function togglePresenca() {
     setCheckInLoading(true);
+    setPresencaErro('');
     try {
       if (presencaInfo) {
         await api.post('/sorteio/checkout');
@@ -125,6 +152,11 @@ export default function Dashboard() {
         const res = await api.post('/sorteio/checkin');
         setPresencaInfo({ horaCheckIn: res.data.presenca?.horaCheckIn || new Date().toISOString() });
       }
+    } catch (e) {
+      // Botão já fica desabilitado fora da janela — isso só cobre o caso
+      // raro de o relógio do navegador estar dessincronizado ou a janela
+      // ter fechado bem no instante do clique.
+      setPresencaErro(e.response?.data?.erro || 'Não foi possível atualizar sua presença.');
     } finally { setCheckInLoading(false); }
   }
 
@@ -177,7 +209,12 @@ export default function Dashboard() {
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Resumo de hoje</p>
         </div>
         {usuario?.perfil === 'corretor' && (
-          <BotaoPresenca presencaInfo={presencaInfo} loading={checkInLoading} onToggle={togglePresenca} />
+          <div className="flex flex-col items-end gap-1">
+            <BotaoPresenca presencaInfo={presencaInfo} loading={checkInLoading} onToggle={togglePresenca} />
+            {presencaErro && (
+              <p className="text-xs" style={{ color: 'var(--accent-hover)' }}>{presencaErro}</p>
+            )}
+          </div>
         )}
       </div>
 
@@ -197,39 +234,34 @@ export default function Dashboard() {
         <GraficoOrigem leads={leads} />
       </div>
 
-      {/* Fila do sorteio */}
+      {/* Fila do dia — sorteada às 10h, ordem já vem física (fila.ordem[0]
+          é sempre o próximo, sem cálculo de rotação aqui). */}
       {fila && (
         <div className="card-alt">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
               <i className="ti ti-arrows-sort text-[16px]" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
-              Fila do sorteio
+              Fila de hoje
             </h2>
-            <span className="text-[11px] font-medium capitalize px-2.5 py-1 rounded"
+            <Link to="/operador" className="text-[11px] font-medium px-2.5 py-1 rounded transition-colors"
               style={{ color: 'var(--text-muted)', background: 'var(--surface-2)' }}>
-              {fila.periodo}
-            </span>
+              Ver tudo
+            </Link>
           </div>
           <div className="flex flex-wrap gap-2">
-            {(() => {
-              const pos = fila.posicaoAtual % fila.ordem.length;
-              return [...fila.ordem.slice(pos), ...fila.ordem.slice(0, pos)].map((c, i) => {
-                const isProximo = i === 0;
-                return (
-                  <div key={c.corretorId}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
-                    style={isProximo ? { background: 'var(--accent)', color: '#fff' } : { background: 'var(--surface-2)', color: 'var(--text-tertiary)' }}
-                  >
-                    <span className="text-xs opacity-60">#{i + 1}</span>
-                    <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      style={isProximo ? { background: 'rgba(255,255,255,0.2)', color: '#fff' } : { background: 'var(--text-faint)', color: 'var(--text-tertiary)' }}>
-                      {iniciais(c.corretorNome)}
-                    </span>
-                    {c.corretorNome.split(' ')[0]}
-                  </div>
-                );
-              });
-            })()}
+            {fila.ordem.map((c, i) => (
+              <div key={c.corretorId}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
+                style={c.proximo ? { background: 'var(--accent)', color: '#fff' } : { background: 'var(--surface-2)', color: 'var(--text-tertiary)' }}
+              >
+                <span className="text-xs opacity-60">#{i + 1}</span>
+                <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                  style={c.proximo ? { background: 'rgba(255,255,255,0.2)', color: '#fff' } : { background: 'var(--text-faint)', color: 'var(--text-tertiary)' }}>
+                  {iniciais(c.corretorNome)}
+                </span>
+                {c.corretorNome.split(' ')[0]}
+              </div>
+            ))}
           </div>
         </div>
       )}

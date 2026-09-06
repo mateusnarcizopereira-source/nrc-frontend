@@ -30,7 +30,7 @@ const SEM_LEADS = ['operador'];
 // Allow-list dos perfis que acessam Clientes/Campanhas — espelha o backend
 // (exigirPerfis('corretor','gerente','editor') em routes/index.js).
 const PODE_CLIENTES_CAMPANHAS = ['corretor', 'gerente', 'editor'];
-// Allow-list da Fila — espelha o backend (exigirPerfis em /sorteio/fila-viva).
+// Allow-list da Fila — espelha o backend (exigirPerfis em /sorteio/fila-do-dia).
 // Antes era perfilMinimo="operador" (hierarquia), que também deixava diretor
 // passar; agora é explícito e diretor fica de fora, como pedido.
 const PODE_FILA = ['operador', 'corretor', 'gerente', 'editor'];
