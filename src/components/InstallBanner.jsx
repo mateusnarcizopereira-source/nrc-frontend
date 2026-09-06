@@ -1,11 +1,33 @@
 import { useState, useEffect } from 'react';
 
+// iOS Safari nunca dispara 'beforeinstallprompt' (não existe nesse
+// navegador) — sem isso, quem usa iPhone nunca via o banner. Detecta
+// iPhone/iPad fora do modo standalone e mostra a instrução manual
+// (Compartilhar → Adicionar à Tela de Início), que é o único jeito de
+// instalar lá. Mesma detecção serve pro aviso de push da Tarefa 3 (iOS só
+// recebe push depois de instalado).
+export function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+}
+export function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
 export default function InstallBanner() {
   const [prompt, setPrompt] = useState(null);
   const [visivel, setVisivel] = useState(false);
+  const [modoIOS, setModoIOS] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem('nrc_pwa_ok')) return;
+    if (isStandalone()) return; // já instalado, nada a mostrar
+
+    if (isIOS()) {
+      setModoIOS(true);
+      setVisivel(true);
+      return;
+    }
+
     const handler = (e) => { e.preventDefault(); setPrompt(e); setVisivel(true); };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
@@ -45,7 +67,13 @@ export default function InstallBanner() {
           <p className="text-sm font-semibold leading-tight" style={{ color: 'var(--text)' }}>
             Instalar o NRC
           </p>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Acesse direto da tela inicial</p>
+          {modoIOS ? (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              Toque em <i className="ti ti-square-arrow-up" aria-hidden="true" style={{ verticalAlign: '-2px' }} /> Compartilhar e depois em "Adicionar à Tela de Início"
+            </p>
+          ) : (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Acesse direto da tela inicial</p>
+          )}
         </div>
         <div className="flex gap-2 flex-shrink-0">
           <button
@@ -56,13 +84,15 @@ export default function InstallBanner() {
           >
             ×
           </button>
-          <button
-            onClick={instalar}
-            className="btn-primary text-xs px-3"
-            style={{ minHeight: '34px' }}
-          >
-            Instalar
-          </button>
+          {!modoIOS && (
+            <button
+              onClick={instalar}
+              className="btn-primary text-xs px-3"
+              style={{ minHeight: '34px' }}
+            >
+              Instalar
+            </button>
+          )}
         </div>
       </div>
     </div>

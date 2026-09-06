@@ -163,8 +163,18 @@ function LeadCard({ lead, usuario }) {
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-semibold" style={{ color: 'var(--text)' }}>{lead.nome}</p>
         </div>
-        <div className="mt-1.5">
+        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
           <BadgeStatus status={lead.descartado ? 'descartado' : lead.status} showTemp />
+          {lead.aguardandoDistribuicao && !lead.descartado && (
+            <span
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+              style={{ background: 'rgba(var(--amber-rgb), 0.14)', color: 'var(--amber)' }}
+              title="Fora da janela de atendimento ou sem corretor presente — será distribuído automaticamente"
+            >
+              <i className="ti ti-clock-pause text-[12px]" aria-hidden="true" />
+              Aguardando distribuição
+            </span>
+          )}
         </div>
         <p className="text-sm font-semibold mt-2.5" style={{ color: 'var(--accent)' }}>
           {lead.empreendimento || '—'}

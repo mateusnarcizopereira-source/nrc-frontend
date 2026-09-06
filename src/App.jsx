@@ -23,6 +23,7 @@ import Tarefas from './pages/Tarefas';
 import Agenda from './pages/Agenda';
 import Layout from './components/Layout';
 import InstallBanner from './components/InstallBanner';
+import NotificacoesPushPrompt from './components/NotificacoesPushPrompt';
 
 const SEM_LEADS = ['operador'];
 // Allow-list dos perfis que acessam Clientes/Campanhas — espelha o backend
@@ -83,6 +84,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <InstallBanner />
+          <NotificacoesPushPrompt />
         </BrowserRouter>
         </NotificacoesProvider>
       </ConfigProvider>
