@@ -58,10 +58,12 @@ export async function pedirPermissaoEObterToken() {
   }
 }
 
-// Notificação chegando com o app ABERTO (foreground) — o SDK não mostra a
-// notificação do sistema sozinho nesse caso (só em background, via o
-// service worker). O sino de notificações in-app já cobre isso em tempo
-// real via socket.io; aqui só evita warning do SDK por falta de listener.
+// Notificação chegando com o app ABERTO (foreground) — o Firebase NUNCA
+// mostra a notificação do sistema sozinho nesse caso (só em background,
+// via o service worker); em foreground a entrega é só pra este listener,
+// e cabe ao app decidir o que fazer. Sem isso registrado em lugar
+// nenhum, a mensagem chegava e sumia — ninguém via nada com o app
+// aberto. Usado por components/PushForegroundListener.jsx.
 export function ouvirMensagensEmForeground(callback) {
   const app = getFirebaseApp();
   if (!app) return () => {};

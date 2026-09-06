@@ -25,6 +25,7 @@ import Notificacoes from './pages/Notificacoes';
 import Layout from './components/Layout';
 import InstallBanner from './components/InstallBanner';
 import NotificacoesPushPrompt from './components/NotificacoesPushPrompt';
+import PushForegroundListener from './components/PushForegroundListener';
 
 const SEM_LEADS = ['operador'];
 // Allow-list dos perfis que acessam Clientes/Campanhas — espelha o backend
@@ -88,6 +89,7 @@ export default function App() {
           </Routes>
           <InstallBanner />
           <NotificacoesPushPrompt />
+          <PushForegroundListener />
         </BrowserRouter>
         </NotificacoesProvider>
       </ConfigProvider>
