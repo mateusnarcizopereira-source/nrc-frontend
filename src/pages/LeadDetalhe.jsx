@@ -135,6 +135,19 @@ function BotaoAcaoHeader({ href, icon, label, cor, corRgb, alvo }) {
   );
 }
 
+// Autoria de um item do histórico — nome + avatar (iniciais, mesmo padrão
+// já usado no cabeçalho pro corretor responsável). Registros antigos sem
+// autor gravado mostram "Autor não registrado" em cinza, sem inventar
+// nome (Avatar já cai pra "?" sozinho quando nome vem vazio/undefined).
+function AutorLinha({ nome }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: nome ? 'var(--text-secondary)' : 'var(--text-faint)', fontWeight: nome ? 600 : 400 }}>
+      <Avatar nome={nome} size={16} opaco={!nome} />
+      {nome || 'Autor não registrado'}
+    </span>
+  );
+}
+
 export default function LeadDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -157,6 +170,7 @@ export default function LeadDetalhe() {
   const [visitaForm, setVisitaForm] = useState({ data: '', hora: '', empreendimento: '', comentario: '', gerenteId: '' });
   const [cadastrandoVisita, setCadastrandoVisita] = useState(false);
   const [modalVisita, setModalVisita] = useState(false);
+  const [registrandoContato, setRegistrandoContato] = useState(false);
 
   const [modalDescarte, setModalDescarte] = useState(false);
   const [motivo, setMotivo] = useState('');
@@ -277,6 +291,18 @@ export default function LeadDetalhe() {
     const res = await api.patch(`/leads/${id}/status`, { status });
     setLead(res.data);
     carregarComentarios(); // mudança de status vira entrada na timeline
+  }
+
+  // Botão manual "Registrar contato" — comentário/visita/status já
+  // registram sozinhos (backend, idempotente); isso aqui é só pra quando
+  // o corretor ligou/conversou sem nenhuma dessas três ações.
+  async function registrarContato() {
+    if (!podeEscrever || registrandoContato) return;
+    setRegistrandoContato(true);
+    try {
+      const res = await api.post(`/leads/${id}/primeiro-contato`);
+      setLead(res.data);
+    } finally { setRegistrandoContato(false); }
   }
 
   async function salvarNotas() {
@@ -405,6 +431,20 @@ export default function LeadDetalhe() {
                   </span>
                   <span>·</span>
                   <span>{lead.origem}</span>
+                  <span>·</span>
+                  {lead.primeiroContatoEm ? (
+                    <span title={fmtDataHora(lead.primeiroContatoEm)}>
+                      <i className="ti ti-phone-check text-[12px] mr-0.5" aria-hidden="true" />
+                      Primeiro contato: {tempoRelativo(lead.primeiroContatoEm)}
+                    </span>
+                  ) : !lead.descartado ? (
+                    <span className="inline-flex items-center gap-1 font-semibold" style={{ color: 'var(--amber)' }}>
+                      <i className="ti ti-phone-off text-[12px]" aria-hidden="true" />
+                      Sem contato registrado
+                    </span>
+                  ) : (
+                    <span>Sem contato registrado</span>
+                  )}
                   {lead.aguardandoDistribuicao && !lead.descartado && (
                     <>
                       <span>·</span>
@@ -606,7 +646,14 @@ export default function LeadDetalhe() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className={`grid gap-2 ${lead.primeiroContatoEm ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  {!lead.primeiroContatoEm && (
+                    <button onClick={registrarContato} disabled={registrandoContato} className="text-xs font-medium py-2 rounded flex items-center justify-center gap-1.5"
+                      style={{ background: 'rgba(var(--amber-rgb), 0.10)', color: 'var(--amber)', border: '1px solid rgba(var(--amber-rgb), 0.3)' }}>
+                      <i className="ti ti-phone-check text-[14px]" aria-hidden="true" />
+                      {registrandoContato ? '...' : 'Contato'}
+                    </button>
+                  )}
                   <button onClick={() => setModalVisita(true)} className="text-xs font-medium py-2 rounded flex items-center justify-center gap-1.5"
                     style={{ background: 'rgba(var(--purple-rgb), 0.10)', color: 'var(--purple)', border: '1px solid rgba(var(--purple-rgb), 0.25)' }}>
                     <i className="ti ti-calendar-event text-[14px]" aria-hidden="true" />
@@ -619,9 +666,12 @@ export default function LeadDetalhe() {
                   </button>
                 </div>
 
-                {/* Comentário rápido — sempre visível, sem procurar aba */}
+                {/* Comentário rápido — sempre visível, sem procurar aba.
+                    Enviar um comentário também registra o primeiro contato
+                    sozinho (backend) — o botão "Contato" acima é só pra
+                    quando o corretor ligou sem escrever nada aqui. */}
                 <div>
-                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Registrar contato</label>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Comentário rápido</label>
                   <form onSubmit={enviarComentario} className="space-y-2">
                     <textarea
                       className="input min-h-[64px] resize-y text-sm"
@@ -717,7 +767,7 @@ export default function LeadDetalhe() {
                       {entry.tipo === 'comentario' && (
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{entry.item.autorNome}</span>
+                            <AutorLinha nome={entry.item.autorNome} />
                             <span className="text-xs" style={{ color: 'var(--text-faint)' }}>{fmtDataHora(entry.item.criadoEm)}</span>
                           </div>
                           <p className="text-sm mt-1" style={{ color: ehMudancaStatus ? 'var(--blue)' : 'var(--text)', fontStyle: ehMudancaStatus ? 'italic' : 'normal' }}>
@@ -727,30 +777,42 @@ export default function LeadDetalhe() {
                       )}
 
                       {entry.tipo === 'tarefa' && (
-                        <TarefaCard
-                          tarefa={entry.item}
-                          podeEditar={podeEditarTarefa}
-                          modoSolo={modoSolo}
-                          onConcluir={setModalConcluirTarefa}
-                          onEditar={(tar) => setModalTarefaForm({ tarefa: tar })}
-                          onCancelar={cancelarTarefa}
-                        />
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                            <AutorLinha nome={entry.item.criadoPorNome} />
+                            <span className="text-xs" style={{ color: 'var(--text-faint)' }}>criou esta tarefa</span>
+                          </div>
+                          <TarefaCard
+                            tarefa={entry.item}
+                            podeEditar={podeEditarTarefa}
+                            modoSolo={modoSolo}
+                            onConcluir={setModalConcluirTarefa}
+                            onEditar={(tar) => setModalTarefaForm({ tarefa: tar })}
+                            onCancelar={cancelarTarefa}
+                          />
+                        </div>
                       )}
 
                       {entry.tipo === 'visita' && (
-                        <div className="flex gap-3 p-3 rounded" style={{ background: 'rgba(var(--purple-rgb), 0.06)', border: '1px solid rgba(var(--purple-rgb), 0.15)' }}>
-                          <div className="text-center min-w-[44px]">
-                            <p className="text-lg font-bold" style={{ color: 'var(--purple)' }}>
-                              {new Date(entry.item.data + 'T00:00').toLocaleDateString('pt-BR', { day: '2-digit' })}
-                            </p>
-                            <p className="text-xs" style={{ color: 'var(--purple)' }}>
-                              {new Date(entry.item.data + 'T00:00').toLocaleDateString('pt-BR', { month: 'short' })}
-                            </p>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                            <AutorLinha nome={entry.item.corretorNome} />
+                            <span className="text-xs" style={{ color: 'var(--text-faint)' }}>agendou esta visita</span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Visita · {entry.item.empreendimento}</p>
-                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{entry.item.hora} · Gerente: {entry.item.gerenteNome}</p>
-                            {entry.item.comentario && <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{entry.item.comentario}</p>}
+                          <div className="flex gap-3 p-3 rounded" style={{ background: 'rgba(var(--purple-rgb), 0.06)', border: '1px solid rgba(var(--purple-rgb), 0.15)' }}>
+                            <div className="text-center min-w-[44px]">
+                              <p className="text-lg font-bold" style={{ color: 'var(--purple)' }}>
+                                {new Date(entry.item.data + 'T00:00').toLocaleDateString('pt-BR', { day: '2-digit' })}
+                              </p>
+                              <p className="text-xs" style={{ color: 'var(--purple)' }}>
+                                {new Date(entry.item.data + 'T00:00').toLocaleDateString('pt-BR', { month: 'short' })}
+                              </p>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Visita · {entry.item.empreendimento}</p>
+                              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{entry.item.hora} · Gerente: {entry.item.gerenteNome}</p>
+                              {entry.item.comentario && <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{entry.item.comentario}</p>}
+                            </div>
                           </div>
                         </div>
                       )}
