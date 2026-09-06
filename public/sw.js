@@ -14,12 +14,12 @@ try {
   importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js');
 
   const FIREBASE_CONFIG_PUSH = {
-    apiKey: 'COLE_AQUI_VITE_FIREBASE_API_KEY',
-    authDomain: 'COLE_AQUI_VITE_FIREBASE_AUTH_DOMAIN',
-    projectId: 'COLE_AQUI_VITE_FIREBASE_PROJECT_ID',
-    storageBucket: 'COLE_AQUI_VITE_FIREBASE_STORAGE_BUCKET',
-    messagingSenderId: 'COLE_AQUI_VITE_FIREBASE_MESSAGING_SENDER_ID',
-    appId: 'COLE_AQUI_VITE_FIREBASE_APP_ID',
+    apiKey: 'AIzaSyB_zobn9OQRdYV5oBcoOiq5pjrehvpEgxU',
+    authDomain: 'crm-meta-eq-bia.firebaseapp.com',
+    projectId: 'crm-meta-eq-bia',
+    storageBucket: 'crm-meta-eq-bia.firebasestorage.app',
+    messagingSenderId: '304302136741',
+    appId: '1:304302136741:web:17c4fd7b3c39ff2aef1c4c',
   };
 
   if (!FIREBASE_CONFIG_PUSH.apiKey.startsWith('COLE_AQUI')) {
