@@ -63,6 +63,20 @@ export default function OperadorFila() {
     setAcaoEmAndamento(null);
   }
 
+  // Só tira do rodízio de novos leads — os que o corretor já tem
+  // continuam com ele, nada muda nos leads dele.
+  async function remover(corretorId, nome) {
+    if (!window.confirm(`Remover ${nome} da fila de hoje?\n\nOs leads que já são dele continuam com ele — isso só tira da vez de receber novos.`)) return;
+    setAcaoEmAndamento(corretorId);
+    try {
+      await api.post('/sorteio/remover', { corretorId });
+      await carregar();
+    } catch (e) {
+      setErro(e.response?.data?.erro || 'Erro ao remover da fila.');
+    }
+    setAcaoEmAndamento(null);
+  }
+
   const ordem = dados?.ordem || [];
   const fora = dados?.fora || [];
   const aguardando = dados?.aguardandoSorteio || [];
@@ -169,6 +183,19 @@ export default function OperadorFila() {
                           style={{ color: i === ordem.length - 1 ? 'var(--text-faint)' : 'var(--text-tertiary)', opacity: i === ordem.length - 1 ? 0.4 : 1 }}
                         >
                           <i className="ti ti-chevron-down text-[16px]" aria-hidden="true" />
+                        </button>
+                        <button
+                          onClick={() => remover(c.corretorId, c.corretorNome)}
+                          disabled={acaoEmAndamento === c.corretorId}
+                          title="Remover da fila de hoje"
+                          className="w-7 h-7 flex items-center justify-center rounded transition-colors ml-1"
+                          style={{ color: 'var(--text-faint)' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
+                        >
+                          {acaoEmAndamento === c.corretorId
+                            ? <i className="ti ti-loader-2 animate-spin text-[16px]" aria-hidden="true" />
+                            : <i className="ti ti-x text-[16px]" aria-hidden="true" />}
                         </button>
                       </div>
                     )}
