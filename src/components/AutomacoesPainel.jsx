@@ -31,6 +31,31 @@ function LinhaRegra({ titulo, descricao, ativo, onToggle, children }) {
   );
 }
 
+// Regras de alerta (sem_contato / parado) têm DOIS toggles independentes
+// — "mostrar alerta na tela" (badge + filtro) e "enviar notificação"
+// (in-app + push) — em vez de um "ativo" só. Nasceram amarrados na mesma
+// chave e a notificação ficou barulhenta demais com lead antigo na base;
+// separado pra poder desligar só a notificação sem perder o badge.
+function LinhaAlerta({ titulo, descricao, mostrarAlerta, enviarNotificacao, onToggleMostrar, onToggleNotificar, children }) {
+  return (
+    <div className="py-3" style={{ borderTop: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
+      <p className="font-medium text-sm" style={{ color: 'var(--text)' }}>{titulo}</p>
+      <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{descricao}</p>
+      <div className="mt-2.5 pl-1">{children}</div>
+      <div className="mt-3 space-y-2 pl-1">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Mostrar alerta na tela (badge + filtro)</span>
+          <Toggle ativo={mostrarAlerta} onChange={onToggleMostrar} />
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Enviar notificação (in-app + push)</span>
+          <Toggle ativo={enviarNotificacao} onChange={onToggleNotificar} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function NumInput({ valor, onChange, sufixo }) {
   return (
     <span className="inline-flex items-center gap-2">
@@ -112,21 +137,25 @@ export default function AutomacoesPainel() {
           <NumInput valor={cfg.autoEsfriamento.dias} onChange={(v) => set('autoEsfriamento', 'dias', v)} sufixo="dias sem interação" />
         </LinhaRegra>
 
-        <LinhaRegra
+        <LinhaAlerta
           titulo="Alerta: aguardando primeiro contato"
-          descricao="Notifica o corretor quando o lead ainda não teve o primeiro contato registrado."
-          ativo={cfg.alertaSemContato.ativo}
-          onToggle={(v) => set('alertaSemContato', 'ativo', v)}>
+          descricao="Lead ainda não teve o primeiro contato registrado."
+          mostrarAlerta={cfg.alertaSemContato.mostrarAlerta}
+          enviarNotificacao={cfg.alertaSemContato.enviarNotificacao}
+          onToggleMostrar={(v) => set('alertaSemContato', 'mostrarAlerta', v)}
+          onToggleNotificar={(v) => set('alertaSemContato', 'enviarNotificacao', v)}>
           <NumInput valor={cfg.alertaSemContato.horas} onChange={(v) => set('alertaSemContato', 'horas', v)} sufixo="horas sem contato" />
-        </LinhaRegra>
+        </LinhaAlerta>
 
-        <LinhaRegra
+        <LinhaAlerta
           titulo="Alerta de lead parado"
-          descricao="Notifica o corretor sobre lead (já com primeiro contato) sem nenhuma interação."
-          ativo={cfg.alertaParado.ativo}
-          onToggle={(v) => set('alertaParado', 'ativo', v)}>
+          descricao="Lead (já com primeiro contato) sem nenhuma interação."
+          mostrarAlerta={cfg.alertaParado.mostrarAlerta}
+          enviarNotificacao={cfg.alertaParado.enviarNotificacao}
+          onToggleMostrar={(v) => set('alertaParado', 'mostrarAlerta', v)}
+          onToggleNotificar={(v) => set('alertaParado', 'enviarNotificacao', v)}>
           <NumInput valor={cfg.alertaParado.dias} onChange={(v) => set('alertaParado', 'dias', v)} sufixo="dias sem interação" />
-        </LinhaRegra>
+        </LinhaAlerta>
 
         <LinhaRegra
           titulo="Reativar descartado"
