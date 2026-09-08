@@ -19,6 +19,7 @@ import ClienteDetalhe from './pages/ClienteDetalhe';
 import Campanhas from './pages/Campanhas';
 import CampanhaDiscador from './pages/CampanhaDiscador';
 import Empreendimentos from './pages/Empreendimentos';
+import Radar from './pages/Radar';
 import Tarefas from './pages/Tarefas';
 import Agenda from './pages/Agenda';
 import Notificacoes from './pages/Notificacoes';
@@ -41,6 +42,10 @@ const PODE_FILA = ['operador', 'corretor', 'gerente', 'editor'];
 // pedido); gerente só gerencia conta corretor (2º degrau dentro do
 // controller do backend).
 const PODE_CORRETORES = ['gerente', 'editor'];
+// Allow-list do Radar — espelha o backend (GET liberado pros 4 perfis do
+// dia a dia; POST/PUT/DELETE só gerente/editor, resolvido dentro de
+// Radar.jsx, igual ao padrão de Empreendimentos.jsx/podeEditar).
+const PODE_RADAR = ['corretor', 'gerente', 'diretor', 'editor'];
 
 function Privado({ children, perfilMinimo, perfisPermitidos, bloqueados }) {
   const { usuario, carregando, temPerfil } = useAuth();
@@ -80,6 +85,7 @@ export default function App() {
                   perfil) — edição/materiais continuam só gerente/editor, resolvido
                   dentro de Empreendimentos.jsx (podeEditar). */}
               <Route path="empreendimentos" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Empreendimentos /></Privado>} />
+              <Route path="radar" element={<Privado perfisPermitidos={PODE_RADAR}><Radar /></Privado>} />
               <Route path="tarefas" element={<Privado bloqueados={SEM_LEADS}><Tarefas /></Privado>} />
               <Route path="agenda" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Agenda /></Privado>} />
               {/* Sem allow-list — visível pra todos os perfis, como pedido. */}

@@ -52,6 +52,15 @@ function itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas }) {
     itens.push({ to: '/empreendimentos', icon: 'building-community', label: 'Empreendimentos', grupo: null });
   }
 
+  // Radar (concorrência) — cadastro de imóveis de OUTRAS construtoras,
+  // usado como referência quando o cliente quer algo que a Empyrus não
+  // tem. Visível pros 4 perfis que usam o sistema no dia a dia, sempre
+  // como aba direta (nunca dentro do "Mais") — diferente do padrão de
+  // Empreendimentos/Visitas/Relatórios, que ficam agrupados pro diretor.
+  if (['corretor', 'gerente', 'diretor', 'editor'].includes(perfil)) {
+    itens.push({ to: '/radar', icon: 'radar', label: 'Radar', grupo: null });
+  }
+
   // Ajuste nav round 3: corretor e gerente perdem o "Mais" inteiramente —
   // tudo que cada um já acessava vira aba lado a lado. Editor mantém um
   // "Mais" enxuto só com os 3 itens de configuração menos usados no dia a
