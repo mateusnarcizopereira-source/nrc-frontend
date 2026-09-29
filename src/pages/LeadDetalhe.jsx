@@ -506,8 +506,15 @@ export default function LeadDetalhe() {
                 parte do próprio cabeçalho sticky). */}
             {!lead.descartado && (
               <div className="flex gap-1.5 flex-wrap flex-shrink-0">
-                <BotaoAcaoHeader href={`tel:${telLimpo}`} icon="phone" label="Ligar" cor="var(--accent-hover)" corRgb="var(--accent-rgb)" />
-                <BotaoAcaoHeader href={`https://wa.me/${numeroWhatsapp(telLimpo)}`} icon="brand-whatsapp" label="WhatsApp" cor="var(--success)" corRgb="var(--success-rgb)" alvo="_blank" />
+                {/* Sem telefone (ex.: conta diretor com contato restrito —
+                    o backend nem manda o campo) não mostra "Ligar"/"WhatsApp":
+                    botão pra tel:undefined seria enganoso, não só feio. */}
+                {lead.telefone && (
+                  <>
+                    <BotaoAcaoHeader href={`tel:${telLimpo}`} icon="phone" label="Ligar" cor="var(--accent-hover)" corRgb="var(--accent-rgb)" />
+                    <BotaoAcaoHeader href={`https://wa.me/${numeroWhatsapp(telLimpo)}`} icon="brand-whatsapp" label="WhatsApp" cor="var(--success)" corRgb="var(--success-rgb)" alvo="_blank" />
+                  </>
+                )}
                 {lead.email && (
                   <BotaoAcaoHeader href={`mailto:${lead.email}`} icon="mail" label="E-mail" cor="var(--text-secondary)" corRgb="var(--ink-rgb)" />
                 )}
