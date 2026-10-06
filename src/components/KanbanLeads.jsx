@@ -6,8 +6,14 @@ import {
 } from '@dnd-kit/core';
 import api from '../services/api';
 import { STATUS_CONFIG } from './BadgeStatus';
+import { useAtendimentoVigente } from '../utils/useAtendimentoVigente';
 
-const STAGES = [
+// Estágio automático: só o sistema coloca o lead aqui (nascimento). A coluna
+// só aparece com a regra em vigor (ou se ainda houver lead nela, ex.: interruptor
+// de emergência desligado) e NÃO aceita soltar cards.
+const AGUARDANDO = 'aguardando_atendimento';
+
+const STAGES_BASE = [
   'tentando_contato', 'material_enviado', 'sem_resposta',
   'meeting_agendado', 'visita_agendada', 'proposta', 'venda_finalizada',
 ];
@@ -72,7 +78,7 @@ function CardKanban({ lead, overlay = false }) {
 
 // ─── Coluna ───────────────────────────────────────────────────
 function Coluna({ status, leads, limite, onCarregarMais }) {
-  const { setNodeRef, isOver } = useDroppable({ id: status });
+  const { setNodeRef, isOver } = useDroppable({ id: status, disabled: status === AGUARDANDO });
   const cfg = STATUS_CONFIG[status] || {};
   const total = leads.length;
   const valorTotal = leads.reduce((s, l) => s + valorEstimado(l), 0);
@@ -135,6 +141,8 @@ export default function KanbanLeads({ busca }) {
   const [limites, setLimites] = useState({});
   const [descarteAlvo, setDescarteAlvo] = useState(null);
   const [motivos, setMotivos] = useState([]);
+  const atendimentoVigente = useAtendimentoVigente();
+  const STAGES = (atendimentoVigente || grupos?.[AGUARDANDO]?.total > 0) ? [AGUARDANDO, ...STAGES_BASE] : STAGES_BASE;
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -156,7 +164,7 @@ export default function KanbanLeads({ busca }) {
 
   function acharLead(id) {
     for (const s of STAGES) {
-      const l = grupos?.[s]?.leads.find((x) => x.id === id);
+      const l = grupos?.[s]?.leads?.find((x) => x.id === id);
       if (l) return l;
     }
     return null;
@@ -181,7 +189,7 @@ export default function KanbanLeads({ busca }) {
     setGrupos((prev) => {
       const c = structuredClone(prev);
       for (const s of STAGES) {
-        const i = c[s].leads.findIndex((l) => l.id === leadId);
+        const i = c[s]?.leads?.findIndex((l) => l.id === leadId) ?? -1;
         if (i >= 0) { c[s].leads.splice(i, 1); c[s].total = Math.max(0, c[s].total - 1); break; }
       }
       return c;
@@ -205,6 +213,7 @@ export default function KanbanLeads({ busca }) {
     const alvo = over.id;
     const origem = active.data.current?.fromStatus;
     if (!origem || alvo === origem) return;
+    if (alvo === AGUARDANDO) return; // estado automático: ninguém devolve um lead para cá
     const leadId = active.id;
 
     if (alvo === 'descartar') { setDescarteAlvo(leadId); return; }
@@ -247,7 +256,7 @@ export default function KanbanLeads({ busca }) {
     <DndContext sensors={sensors} onDragStart={(e) => setActiveLead(acharLead(e.active.id))} onDragEnd={onDragEnd} onDragCancel={() => setActiveLead(null)}>
       <div className="flex gap-2 overflow-x-auto pb-4" style={{ WebkitOverflowScrolling: 'touch' }}>
         {STAGES.map((s) => (
-          <Coluna key={s} status={s} leads={filtrar(grupos[s].leads)}
+          <Coluna key={s} status={s} leads={filtrar(grupos[s]?.leads || [])}
             limite={limites[s] || PAGINA} onCarregarMais={carregarMais} />
         ))}
         <ZonaDescarte />

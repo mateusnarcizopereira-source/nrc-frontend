@@ -672,6 +672,10 @@ export default function LeadDetalhe() {
                 <div>
                   <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Status</label>
                   <select className="input" value={lead.status} onChange={(e) => mudarStatus(e.target.value)}>
+                    {/* Estado automático: aparece só enquanto o lead está nele (não dá para escolher de volta). */}
+                    {lead.status === 'aguardando_atendimento' && (
+                      <option value="aguardando_atendimento" disabled>Aguardando atendimento · NOVO</option>
+                    )}
                     {TEMPERATURA_OPCOES.map((o) => (
                       <option key={o.value} value={o.value}>{o.label} · {o.temp}</option>
                     ))}

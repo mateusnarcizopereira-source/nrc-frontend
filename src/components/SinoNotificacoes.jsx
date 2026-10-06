@@ -4,6 +4,7 @@ import { useNotificacoes } from '../contexts/NotificacoesContext';
 
 const ICONE = {
   lead_novo:       'user-plus',
+  lead_repassado:  'arrows-exchange', // lead repassado por falta de atendimento (sem som)
   sorteio:         'ticket',
   tarefa_vencendo: 'clock-exclamation',
   tarefa_atrasada: 'alarm',

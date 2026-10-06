@@ -2,6 +2,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
+import { useAtendimentoVigente } from '../utils/useAtendimentoVigente';
 
 // 7 etapas do funil (mesma escala de temperatura usada em BadgeStatus/LeadDetalhe).
 const ETAPAS_FUNIL = [
@@ -50,7 +51,14 @@ function TooltipCard({ active, payload, label }) {
 }
 
 export function GraficoFunil({ leads }) {
-  const dados = ETAPAS_FUNIL.map((e) => ({
+  // "Aguardando atendimento" entra como 1ª etapa só com a regra em vigor (ou se
+  // ainda houver lead nesse estágio, ex.: interruptor de emergência desligado).
+  const atendimentoVigente = useAtendimentoVigente();
+  const incluirAguardando = atendimentoVigente || leads.some((l) => !l.descartado && l.status === 'aguardando_atendimento');
+  const etapas = incluirAguardando
+    ? [{ key: 'aguardando_atendimento', label: 'Aguardando\natendimento' }, ...ETAPAS_FUNIL]
+    : ETAPAS_FUNIL;
+  const dados = etapas.map((e) => ({
     etapa: e.label,
     quantidade: leads.filter((l) => !l.descartado && l.status === e.key).length,
   }));

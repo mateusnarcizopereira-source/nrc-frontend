@@ -4,6 +4,12 @@
 // lugares), dot = o mesmo tom do texto. Tudo via var(--token) — trocar a cor
 // de uma etapa é editar o token em index.css, não aqui.
 const config = {
+  aguardando_atendimento: {
+    label: 'Aguardando atendimento',
+    temp: 'NOVO',
+    corRgb: 'var(--warning-rgb)',
+    cor: 'var(--warning)',
+  },
   tentando_contato: {
     label: 'Tentando Contato',
     temp: 'GELADO',

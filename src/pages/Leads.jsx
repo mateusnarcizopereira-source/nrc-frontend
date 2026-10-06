@@ -7,6 +7,7 @@ import KanbanLeads from '../components/KanbanLeads';
 import ImportarLeadsModal from '../components/ImportarLeadsModal';
 import { numeroWhatsapp } from '../utils/whatsapp';
 import { textoAlerta, corAlerta } from '../utils/alertaLead';
+import { useAtendimentoVigente } from '../utils/useAtendimentoVigente';
 
 const VIEW_KEY = 'nrc_leads_view';
 
@@ -18,6 +19,8 @@ const FILTROS = [
   // gerente/editor (que já veem os leads de todos os corretores), isso
   // sozinho já cobre "visão de todos os leads parados".
   { key: 'atencao',           label: 'Precisam de atenção' },
+  // "Aguardando atendimento" só aparece com a regra em vigor (ou se ainda houver lead nesse estágio).
+  { key: 'aguardando_atendimento', label: 'Aguardando atendimento' },
   { key: 'tentando_contato',  label: 'Tentando Contato'   },
   { key: 'material_enviado',  label: 'Material Enviado'   },
   { key: 'sem_resposta',      label: 'Sem Resposta'       },
@@ -29,6 +32,7 @@ const FILTROS = [
 
 export default function Leads() {
   const [leads, setLeads] = useState([]);
+  const atendimentoVigente = useAtendimentoVigente();
   const [filtro, setFiltro] = useState('todos');
   const [busca, setBusca] = useState('');
   const [carregando, setCarregando] = useState(true);
@@ -103,7 +107,7 @@ export default function Leads() {
         />
         {view === 'lista' && (
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {FILTROS.map((f) => {
+            {FILTROS.filter((f) => f.key !== 'aguardando_atendimento' || atendimentoVigente || leads.some((l) => l.status === 'aguardando_atendimento')).map((f) => {
               const contagemAtencao = f.key === 'atencao' ? leads.filter((l) => l.alerta).length : null;
               return (
                 <button

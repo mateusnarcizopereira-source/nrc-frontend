@@ -161,6 +161,10 @@ export default function OperadorFila() {
                       </div>
                       <p className="text-xs mt-0.5" style={{ color: c.proximo ? 'var(--accent)' : 'var(--text-faint)' }}>
                         {c.leadsHoje} lead{c.leadsHoje === 1 ? '' : 's'} hoje
+                        {/* "Perdidos hoje" (repasses automáticos por falta de atendimento): o backend só manda este campo com a regra em vigor. */}
+                        {c.perdidosHoje !== undefined && (
+                          <span style={{ color: c.perdidosHoje > 0 ? 'var(--warning)' : undefined }}> · Perdidos hoje: {c.perdidosHoje}</span>
+                        )}
                       </p>
                     </div>
 
