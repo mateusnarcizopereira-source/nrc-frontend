@@ -287,11 +287,32 @@ export default function LeadDetalhe() {
     }
   }
 
+  // Erro numa ação do corretor: mostra a mensagem do servidor (ou a padrão). Se o corretor
+  // PERDEU o acesso ao lead (403) ou ele foi repassado a outro corretor (409), depois do aviso
+  // volta para a lista — a tela do lead deixou de ser dele.
+  function avisarErro(e, padrao) {
+    alert(e.response?.data?.erro || padrao);
+    if ([403, 409].includes(e.response?.status)) navigate('/leads');
+  }
+
+  // Relê o lead do servidor (verdade atual) — usado quando uma ação falha por outro motivo
+  // (instabilidade, por exemplo) e a tela não pode ficar mostrando um estado que não aconteceu.
+  function recarregarLead() {
+    api.get(`/leads/${id}`).then((r) => { setLead(r.data); setNotas(r.data.notas || ''); }).catch(() => {});
+  }
+
   async function mudarStatus(status) {
     if (!podeEscrever || !status) return;
-    const res = await api.patch(`/leads/${id}/status`, { status });
-    setLead(res.data);
-    carregarComentarios(); // mudança de status vira entrada na timeline
+    try {
+      const res = await api.patch(`/leads/${id}/status`, { status });
+      setLead(res.data);
+      carregarComentarios(); // mudança de status vira entrada na timeline
+    } catch (e) {
+      avisarErro(e, 'Não foi possível alterar o status.');
+      // o select é controlado por lead.status: força a releitura para ele voltar ao valor real
+      setLead((prev) => (prev ? { ...prev } : prev));
+      if (![403, 409].includes(e.response?.status)) recarregarLead();
+    }
   }
 
   // Botão manual "Registrar contato" — comentário/visita/status já
@@ -303,6 +324,9 @@ export default function LeadDetalhe() {
     try {
       const res = await api.post(`/leads/${id}/primeiro-contato`);
       setLead(res.data);
+    } catch (e) {
+      avisarErro(e, 'Não foi possível registrar o contato.');
+      if (![403, 409].includes(e.response?.status)) recarregarLead();
     } finally { setRegistrandoContato(false); }
   }
 
@@ -321,6 +345,9 @@ export default function LeadDetalhe() {
       const res = await api.post(`/leads/${id}/comentarios`, { texto: novoComentario });
       setComentarios([res.data, ...comentarios]);
       setNovoComentario('');
+    } catch (e) {
+      // o texto continua na caixa (nada foi gravado): o corretor pode tentar de novo
+      avisarErro(e, 'Não foi possível enviar o comentário.');
     } finally { setEnviando(false); }
   }
 
@@ -333,6 +360,10 @@ export default function LeadDetalhe() {
       setVisitas([res.data, ...visitas]);
       setVisitaForm({ data: '', hora: '', empreendimento: '', comentario: '', gerenteId: '' });
       setModalVisita(false);
+    } catch (e) {
+      // o modal continua aberto com os dados preenchidos (nada foi gravado): dá para corrigir e tentar de novo;
+      // em 403/409 o aviso leva o corretor de volta à lista
+      avisarErro(e, 'Não foi possível agendar a visita.');
     } finally { setCadastrandoVisita(false); }
   }
 
