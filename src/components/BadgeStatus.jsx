@@ -34,6 +34,18 @@ const config = {
     corRgb: 'var(--terracotta-rgb)',
     cor: 'var(--terracotta)',
   },
+  call_agendada: {
+    label: 'Call Agendada',
+    temp: 'QUENTE',
+    corRgb: 'var(--indigo-rgb)',
+    cor: 'var(--indigo)',
+  },
+  call_realizado: {
+    label: 'Call Realizado',
+    temp: 'QUENTE',
+    corRgb: 'var(--plum-rgb)',
+    cor: 'var(--plum)',
+  },
   visita_agendada: {
     label: 'Visita Agendada',
     temp: 'QUENTE',

@@ -7,6 +7,7 @@ import api from '../services/api';
 import BadgeStatus from '../components/BadgeStatus';
 import { GraficoFunil, GraficoOrigem } from '../components/DashboardCharts';
 import { dentroDaJanelaCheckin, checkinAindaNaoAbriu } from '../utils/janelaFila';
+import { contaComoVisita } from '../utils/estagios';
 
 function iniciais(nome) {
   return nome?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?';
@@ -165,7 +166,7 @@ export default function Dashboard() {
 
   const contagem = {
     tentando_contato: leads.filter((l) => l.status === 'tentando_contato').length,
-    _visita:          leads.filter((l) => ['meeting_agendado', 'visita_agendada'].includes(l.status)).length,
+    _visita:          leads.filter((l) => contaComoVisita(l.status)).length,
     proposta:         leads.filter((l) => l.status === 'proposta').length,
     venda_finalizada: leads.filter((l) => l.status === 'venda_finalizada').length,
   };

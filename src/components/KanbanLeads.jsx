@@ -15,7 +15,7 @@ const AGUARDANDO = 'aguardando_atendimento';
 
 const STAGES_BASE = [
   'tentando_contato', 'material_enviado', 'sem_resposta',
-  'meeting_agendado', 'visita_agendada', 'proposta', 'venda_finalizada',
+  'meeting_agendado', 'call_agendada', 'call_realizado', 'visita_agendada', 'proposta', 'venda_finalizada',
 ];
 const PAGINA = 15;
 
@@ -163,8 +163,8 @@ export default function KanbanLeads({ busca }) {
   useEffect(() => { api.get('/motivos-descarte').then((r) => setMotivos(r.data)).catch(() => {}); }, []);
 
   function acharLead(id) {
-    for (const s of STAGES) {
-      const l = grupos?.[s]?.leads?.find((x) => x.id === id);
+    for (const g of Object.values(grupos || {})) {
+      const l = g?.leads?.find((x) => x.id === id);
       if (l) return l;
     }
     return null;
@@ -173,12 +173,15 @@ export default function KanbanLeads({ busca }) {
   function moverLocal(leadId, origem, alvo) {
     setGrupos((prev) => {
       const c = structuredClone(prev);
-      const idx = c[origem].leads.findIndex((l) => l.id === leadId);
-      if (idx < 0) return prev;
-      const [lead] = c[origem].leads.splice(idx, 1);
-      c[origem].total = Math.max(0, c[origem].total - 1);
+      // o lead pode estar no grupo do próprio status ou em "outros" (estágio desconhecido): acha onde ele realmente está
+      const chaveOrigem = Object.keys(c).find((k) => c[k]?.leads?.some((l) => l.id === leadId));
+      if (!chaveOrigem) return prev;
+      const idx = c[chaveOrigem].leads.findIndex((l) => l.id === leadId);
+      const [lead] = c[chaveOrigem].leads.splice(idx, 1);
+      c[chaveOrigem].total = Math.max(0, c[chaveOrigem].total - 1);
       lead.status = alvo;
       lead.statusDesde = new Date().toISOString();
+      if (!c[alvo]) c[alvo] = { leads: [], total: 0, valorTotal: 0 }; // backend mais antigo sem o grupo
       c[alvo].leads.unshift(lead);
       c[alvo].total += 1;
       return c;
@@ -188,7 +191,7 @@ export default function KanbanLeads({ busca }) {
   function removerLocal(leadId) {
     setGrupos((prev) => {
       const c = structuredClone(prev);
-      for (const s of STAGES) {
+      for (const s of Object.keys(c)) {
         const i = c[s]?.leads?.findIndex((l) => l.id === leadId) ?? -1;
         if (i >= 0) { c[s].leads.splice(i, 1); c[s].total = Math.max(0, c[s].total - 1); break; }
       }
@@ -256,6 +259,11 @@ export default function KanbanLeads({ busca }) {
     <DndContext sensors={sensors} onDragStart={(e) => setActiveLead(acharLead(e.active.id))} onDragEnd={onDragEnd} onDragCancel={() => setActiveLead(null)}>
       <div className="flex gap-2 overflow-x-auto pb-4" style={{ WebkitOverflowScrolling: 'touch' }}>
         {STAGES.map((s) => (
+          <Coluna key={s} status={s} leads={filtrar(grupos[s]?.leads || [])}
+            limite={limites[s] || PAGINA} onCarregarMais={carregarMais} />
+        ))}
+        {/* Estágios que esta versão da tela não conhece: o lead NUNCA fica escondido. */}
+        {Object.keys(grupos).filter((k) => !STAGES.includes(k) && grupos[k]?.total > 0).map((s) => (
           <Coluna key={s} status={s} leads={filtrar(grupos[s]?.leads || [])}
             limite={limites[s] || PAGINA} onCarregarMais={carregarMais} />
         ))}

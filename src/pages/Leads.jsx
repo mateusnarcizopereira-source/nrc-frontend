@@ -25,6 +25,8 @@ const FILTROS = [
   { key: 'material_enviado',  label: 'Material Enviado'   },
   { key: 'sem_resposta',      label: 'Sem Resposta'       },
   { key: 'meeting_agendado',  label: 'Meeting Agendado'   },
+  { key: 'call_agendada',     label: 'Call Agendada'      },
+  { key: 'call_realizado',    label: 'Call Realizado'     },
   { key: 'visita_agendada',   label: 'Visita Agendada'    },
   { key: 'proposta',          label: 'Proposta'           },
   { key: 'venda_finalizada',  label: 'Venda Finalizada'   },

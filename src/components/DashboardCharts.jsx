@@ -4,12 +4,14 @@ import {
 } from 'recharts';
 import { useAtendimentoVigente } from '../utils/useAtendimentoVigente';
 
-// 7 etapas do funil (mesma escala de temperatura usada em BadgeStatus/LeadDetalhe).
+// Etapas do funil (mesma escala de temperatura usada em BadgeStatus/LeadDetalhe).
 const ETAPAS_FUNIL = [
   { key: 'tentando_contato',  label: 'Tentando\nContato' },
   { key: 'material_enviado',  label: 'Material\nEnviado' },
   { key: 'sem_resposta',      label: 'Sem\nResposta' },
   { key: 'meeting_agendado',  label: 'Meeting\nAgendado' },
+  { key: 'call_agendada',     label: 'Call\nAgendada' },
+  { key: 'call_realizado',    label: 'Call\nRealizado' },
   { key: 'visita_agendada',   label: 'Visita\nAgendada' },
   { key: 'proposta',          label: 'Proposta' },
   { key: 'venda_finalizada',  label: 'Venda\nFinalizada' },

@@ -16,6 +16,8 @@ const TEMPERATURA_OPCOES = [
   { value: 'material_enviado', label: 'Material Enviado', temp: 'MEIO-MORNO' },
   { value: 'sem_resposta',     label: 'Sem Resposta',     temp: 'FRIO'       },
   { value: 'meeting_agendado', label: 'Meeting Agendado', temp: 'MORNO'      },
+  { value: 'call_agendada',    label: 'Call Agendada',    temp: 'MORNO'      },
+  { value: 'call_realizado',   label: 'Call Realizado',   temp: 'MORNO'      },
   { value: 'visita_agendada',  label: 'Visita Agendada',  temp: 'MORNO'      },
   { value: 'proposta',         label: 'Proposta',          temp: 'QUENTE'    },
   { value: 'venda_finalizada', label: 'Venda Finalizada', temp: 'FERVENDO'   },
@@ -706,6 +708,10 @@ export default function LeadDetalhe() {
                     {/* Estado automático: aparece só enquanto o lead está nele (não dá para escolher de volta). */}
                     {lead.status === 'aguardando_atendimento' && (
                       <option value="aguardando_atendimento" disabled>Aguardando atendimento · NOVO</option>
+                    )}
+                    {/* Estágio que esta versão da tela não conhece (criado por versão mais nova): aparece, nunca some nem vira outro. */}
+                    {lead.status !== 'aguardando_atendimento' && !TEMPERATURA_OPCOES.some((o) => o.value === lead.status) && (
+                      <option value={lead.status} disabled>{lead.status}</option>
                     )}
                     {TEMPERATURA_OPCOES.map((o) => (
                       <option key={o.value} value={o.value}>{o.label} · {o.temp}</option>
