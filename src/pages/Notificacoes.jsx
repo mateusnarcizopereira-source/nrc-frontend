@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { pedirPermissaoEObterToken, pushConfigurado } from '../services/firebaseClient';
+import { registrarTokenNoBackend } from '../services/pushSync';
+import { useAuth } from '../contexts/AuthContext';
 import { isIOS, isStandalone } from '../components/InstallBanner';
 
 function isAndroid() {
@@ -35,6 +37,7 @@ const STATUS_CONFIG = {
 };
 
 export default function Notificacoes() {
+  const { usuario } = useAuth();
   const [status, setStatus] = useState('verificando');
   const [sistema, setSistema] = useState('android'); // destaque inicial — trocado no mount conforme detecção
   const [ativando, setAtivando] = useState(false);
@@ -56,14 +59,14 @@ export default function Notificacoes() {
       const token = await pedirPermissaoEObterToken();
       if (token) {
         setStatus('ativo');
-        api.post('/usuarios/me/fcm-token', { token }).catch(() => {}); // garante que está salvo, idempotente
+        registrarTokenNoBackend(usuario?.id, token).catch(() => {}); // garante que está salvo, idempotente
       } else {
         setStatus('desativado');
       }
     } catch {
       setStatus('desativado');
     }
-  }, []);
+  }, [usuario?.id]);
 
   useEffect(() => {
     setSistema(isIOS() ? 'ios' : 'android');
@@ -81,7 +84,7 @@ export default function Notificacoes() {
         setAtivando(false);
         return;
       }
-      await api.post('/usuarios/me/fcm-token', { token });
+      await registrarTokenNoBackend(usuario?.id, token);
       setStatus('ativo');
       setMensagem({ tipo: 'sucesso', texto: 'Pronto! Notificações ativadas neste aparelho.' });
     } catch {

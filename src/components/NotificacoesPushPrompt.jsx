@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
 import { pedirPermissaoEObterToken, pushConfigurado } from '../services/firebaseClient';
+import { registrarTokenNoBackend } from '../services/pushSync';
 import { isIOS, isStandalone } from './InstallBanner';
 
 const CHAVE_VISTO = 'nrc_push_prompt_visto';
@@ -48,7 +48,7 @@ export default function NotificacoesPushPrompt() {
     try {
       const token = await pedirPermissaoEObterToken();
       if (token) {
-        await api.post('/usuarios/me/fcm-token', { token });
+        await registrarTokenNoBackend(usuario?.id, token);
       }
     } catch {
       // Silencioso de propósito — push é um extra, nunca deve virar um erro

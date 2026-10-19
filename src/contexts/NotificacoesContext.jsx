@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 import { useAuth } from './AuthContext';
 import { conectarSocket } from '../services/socket';
+import { contarDaLista, contadoresAposNova, contadoresAposLida, CONTADORES_ZERO } from '../utils/notificacoes';
 
 const Ctx = createContext(null);
 
@@ -38,11 +39,20 @@ export function NotificacoesProvider({ children }) {
   const somRef = useRef(somLigado);
   somRef.current = somLigado;
 
-  const naoLidas = useMemo(() => lista.filter((n) => !n.lida).length, [lista]);
+  // Contadores vêm do servidor (contagem barata, valem para TODAS as notificações, não só as 50 da lista) e são
+  // ajustados na hora quando algo chega ou é lido. O número do sino conta só os LEADS.
+  const [contadores, setContadores] = useState(CONTADORES_ZERO);
+  const naoLidas = contadores.naoLidasLeads;
+  const naoLidasTotal = contadores.naoLidas;
+  const naoLidasOutras = Math.max(0, contadores.naoLidas - contadores.naoLidasLeads);
 
   const carregar = useCallback(() => {
     if (!usuario) return;
-    api.get('/notificacoes').then((r) => setLista(r.data)).catch(() => {});
+    api.get('/notificacoes').then((r) => {
+      setLista(r.data);
+      setContadores((c) => (c === CONTADORES_ZERO ? contarDaLista(r.data) : c)); // reserva até o servidor responder
+    }).catch(() => {});
+    api.get('/notificacoes/contador').then((r) => setContadores({ naoLidas: r.data.naoLidas || 0, naoLidasLeads: r.data.naoLidasLeads || 0 })).catch(() => {});
   }, [usuario]);
 
   useEffect(() => { carregar(); }, [carregar]);
@@ -53,6 +63,7 @@ export function NotificacoesProvider({ children }) {
     const socket = conectarSocket(usuario.id);
     const onNova = (notif) => {
       setLista((prev) => [notif, ...prev].slice(0, 50));
+      setContadores((c) => contadoresAposNova(c, notif));
       if (somRef.current && TIPOS_COM_SOM.has(notif.tipo)) tocarSom();
       if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
         try { new Notification(notif.titulo || 'NRC', { body: notif.mensagem || '' }); } catch {}
@@ -84,22 +95,24 @@ export function NotificacoesProvider({ children }) {
   }
 
   async function marcarLida(id) {
+    setContadores((c) => contadoresAposLida(c, lista.find((n) => n.id === id)));
     setLista((prev) => prev.map((n) => (n.id === id ? { ...n, lida: true } : n)));
     try { await api.patch(`/notificacoes/${id}/lida`); } catch {}
   }
 
   async function marcarTodas() {
+    setContadores(CONTADORES_ZERO);
     setLista((prev) => prev.map((n) => ({ ...n, lida: true })));
     try { await api.post('/notificacoes/marcar-todas'); } catch {}
   }
 
   return (
-    <Ctx.Provider value={{ lista, naoLidas, somLigado, setSomLigado, marcarLida, marcarTodas }}>
+    <Ctx.Provider value={{ lista, naoLidas, naoLidasTotal, naoLidasOutras, somLigado, setSomLigado, marcarLida, marcarTodas }}>
       {children}
     </Ctx.Provider>
   );
 }
 
 export const useNotificacoes = () => useContext(Ctx) || {
-  lista: [], naoLidas: 0, somLigado: true, setSomLigado: () => {}, marcarLida: () => {}, marcarTodas: () => {},
+  lista: [], naoLidas: 0, naoLidasTotal: 0, naoLidasOutras: 0, somLigado: true, setSomLigado: () => {}, marcarLida: () => {}, marcarTodas: () => {},
 };

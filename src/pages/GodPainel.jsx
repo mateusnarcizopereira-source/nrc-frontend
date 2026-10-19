@@ -3,6 +3,8 @@ import api from '../services/api';
 import { useConfig } from '../contexts/ConfigContext';
 import AutomacoesPainel from '../components/AutomacoesPainel';
 import PausasDistribuicaoPainel from '../components/PausasDistribuicaoPainel';
+import CorretoresSemPush from '../components/CorretoresSemPush';
+import SaudeDoPush from '../components/SaudeDoPush';
 
 // ── Toggle ────────────────────────────────────────────────────
 function Toggle({ ativo, onChange, carregando }) {
@@ -210,6 +212,10 @@ function GestaoUsuarios() {
           <i className="ti ti-plus mr-1" />Novo
         </button>
       </div>
+
+      {/* Push: quem está sem aparelho ativado (dado que a lista já traz) e o diagnóstico sob demanda */}
+      {!carregando && <CorretoresSemPush usuarios={usuarios} />}
+      {!carregando && <SaudeDoPush usuarios={usuarios} />}
 
       {carregando ? (
         <div className="flex justify-center py-8">

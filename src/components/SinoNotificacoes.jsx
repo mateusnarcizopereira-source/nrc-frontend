@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotificacoes } from '../contexts/NotificacoesContext';
+import { filtrarPorGrupo } from '../utils/notificacoes';
 
 const ICONE = {
   lead_novo:       'user-plus',
@@ -23,8 +24,10 @@ function fmt(iso) {
 }
 
 export default function SinoNotificacoes({ painelStyle }) {
-  const { lista, naoLidas, somLigado, setSomLigado, marcarLida, marcarTodas } = useNotificacoes();
+  const { lista, naoLidas, naoLidasTotal, naoLidasOutras, somLigado, setSomLigado, marcarLida, marcarTodas } = useNotificacoes();
   const [aberto, setAberto] = useState(false);
+  const [aba, setAba] = useState('leads'); // 'leads' (lead novo/repassado) | 'outras'
+  const visiveis = filtrarPorGrupo(lista, aba);
   const navigate = useNavigate();
 
   function abrir(n) {
@@ -65,20 +68,31 @@ export default function SinoNotificacoes({ painelStyle }) {
                   className="p-1.5" style={{ color: somLigado ? 'var(--text-tertiary)' : 'var(--text-muted)' }}>
                   <i className={`ti ti-${somLigado ? 'volume' : 'volume-off'} text-[16px]`} aria-hidden="true" />
                 </button>
-                {naoLidas > 0 && (
+                {naoLidasTotal > 0 && (
                   <button onClick={marcarTodas} className="text-[11px] px-2 py-1" style={{ color: 'var(--accent)' }}>
-                    Marcar todas
+                    Marcar todas como lidas
                   </button>
                 )}
               </div>
             </div>
 
+            {/* Abas: o aviso de lead novo não se perde entre tarefas e alertas */}
+            <div className="flex" style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.06)' }}>
+              {[['leads', 'Leads', naoLidas], ['outras', 'Outras', naoLidasOutras]].map(([chave, rotulo, qtd]) => (
+                <button key={chave} onClick={() => setAba(chave)} className="flex-1 text-xs font-semibold py-2 flex items-center justify-center gap-1.5"
+                  style={{ color: aba === chave ? 'var(--text)' : 'var(--text-muted)', borderBottom: aba === chave ? '2px solid var(--accent)' : '2px solid transparent' }}>
+                  {rotulo}
+                  {qtd > 0 && <span className="text-[10px] rounded-full px-1.5" style={{ background: chave === 'leads' ? 'var(--accent)' : 'rgba(var(--ink-rgb), 0.12)', color: chave === 'leads' ? '#fff' : 'var(--text-secondary)' }}>{qtd > 99 ? '99+' : qtd}</span>}
+                </button>
+              ))}
+            </div>
+
             {/* Lista */}
             <div className="overflow-y-auto">
-              {lista.length === 0 ? (
-                <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>Nenhuma notificação.</p>
+              {visiveis.length === 0 ? (
+                <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>{aba === 'leads' ? 'Nenhum aviso de lead.' : 'Nenhuma outra notificação.'}</p>
               ) : (
-                lista.map((n) => (
+                visiveis.map((n) => (
                   <button key={n.id} onClick={() => abrir(n)}
                     className="w-full text-left flex gap-3 px-4 py-3 transition-colors"
                     style={{ borderBottom: '1px solid rgba(var(--ink-rgb), 0.04)', background: n.lida ? 'transparent' : 'rgba(var(--accent-rgb), 0.05)' }}

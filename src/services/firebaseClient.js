@@ -58,6 +58,24 @@ export async function pedirPermissaoEObterToken() {
   }
 }
 
+// Token FCM vigente SEM abrir diálogo: só se a permissão já foi concedida (usado na sincronização automática).
+// O getToken devolve o token atual — se o FCM o renovou, vem o novo. Nunca trava: o service worker tem 5 s.
+export async function obterTokenSemPerguntar() {
+  const app = getFirebaseApp();
+  if (!app || !('Notification' in window) || Notification.permission !== 'granted') return null;
+  if (!(await isSupported().catch(() => false)) || !VAPID_KEY) return null;
+  try {
+    const messaging = getMessaging(app);
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('service worker indisponível')), 5000)),
+    ]);
+    return (await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration })) || null;
+  } catch {
+    return null;
+  }
+}
+
 // Notificação chegando com o app ABERTO (foreground) — o Firebase NUNCA
 // mostra a notificação do sistema sozinho nesse caso (só em background,
 // via o service worker); em foreground a entrega é só pra este listener,

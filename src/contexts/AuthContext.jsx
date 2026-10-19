@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
 import { conectarSocket, desconectarSocket } from '../services/socket';
+import { sincronizarToken, removerTokenDoAparelho } from '../services/pushSync';
 
 const AuthContext = createContext(null);
 
@@ -24,6 +25,16 @@ export function AuthProvider({ children }) {
     if (usuario?.id) conectarSocket(usuario.id);
   }, [usuario?.id]);
 
+  // Token de push sempre na conta logada: ao entrar, ao abrir o app já logado e ao voltar para a aba
+  // (só fala com o backend se o token mudou, se mudou a conta ou se passou 1 dia — ver utils/pushToken.js).
+  useEffect(() => {
+    if (!usuario?.id) return undefined;
+    sincronizarToken(usuario);
+    const aoVoltar = () => { if (!document.hidden) sincronizarToken(usuario); };
+    document.addEventListener('visibilitychange', aoVoltar);
+    return () => document.removeEventListener('visibilitychange', aoVoltar);
+  }, [usuario?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function login(email, senha) {
     const res = await api.post('/auth/login', { email, senha });
     localStorage.setItem('nrc_token', res.data.token);
@@ -32,6 +43,7 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    removerTokenDoAparelho(localStorage.getItem('nrc_token')); // o token deste aparelho não fica preso nesta conta
     desconectarSocket();
     localStorage.removeItem('nrc_token');
     setUsuario(null);
