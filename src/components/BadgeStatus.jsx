@@ -52,6 +52,24 @@ const config = {
     corRgb: 'var(--purple-rgb)',
     cor: 'var(--purple)',
   },
+  visita_nao_realizada: {
+    label: 'Visita Não Realizada',
+    temp: 'MORNO',
+    corRgb: 'var(--slate-rgb)',
+    cor: 'var(--slate)',
+  },
+  visita_realizada: {
+    label: 'Visita Realizada',
+    temp: 'QUENTE',
+    corRgb: 'var(--lime-rgb)',
+    cor: 'var(--lime)',
+  },
+  retorno: {
+    label: 'Retorno',
+    temp: 'QUENTE',
+    corRgb: 'var(--sky-rgb)',
+    cor: 'var(--sky)',
+  },
   proposta: {
     label: 'Proposta',
     temp: 'FERVENDO',

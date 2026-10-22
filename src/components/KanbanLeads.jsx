@@ -7,6 +7,7 @@ import {
 import api from '../services/api';
 import { STATUS_CONFIG } from './BadgeStatus';
 import { useAtendimentoVigente } from '../utils/useAtendimentoVigente';
+import { textoInteracao, dataCompleta, ultimaInteracaoDe } from '../utils/interacao';
 
 // Estágio automático: só o sistema coloca o lead aqui (nascimento). A coluna
 // só aparece com a regra em vigor (ou se ainda houver lead nela, ex.: interruptor
@@ -15,7 +16,8 @@ const AGUARDANDO = 'aguardando_atendimento';
 
 const STAGES_BASE = [
   'tentando_contato', 'material_enviado', 'sem_resposta',
-  'meeting_agendado', 'call_agendada', 'call_realizado', 'visita_agendada', 'proposta', 'venda_finalizada',
+  'meeting_agendado', 'call_agendada', 'call_realizado', 'visita_agendada',
+  'visita_nao_realizada', 'visita_realizada', 'retorno', 'proposta', 'venda_finalizada',
 ];
 const PAGINA = 15;
 
@@ -72,6 +74,9 @@ function CardKanban({ lead, overlay = false }) {
       )}
       <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{lead.telefone}</p>
       <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{tempoNoEstagio(lead.statusDesde)}</p>
+      {textoInteracao(lead) && (
+        <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-faint)' }} title={`Última interação em ${dataCompleta(ultimaInteracaoDe(lead))}`}>{textoInteracao(lead)}</p>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import ImportarLeadsModal from '../components/ImportarLeadsModal';
 import { numeroWhatsapp } from '../utils/whatsapp';
 import { textoAlerta, corAlerta } from '../utils/alertaLead';
 import { useAtendimentoVigente } from '../utils/useAtendimentoVigente';
+import { textoInteracao, dataCompleta, ultimaInteracaoDe } from '../utils/interacao';
 
 const VIEW_KEY = 'nrc_leads_view';
 
@@ -28,6 +29,9 @@ const FILTROS = [
   { key: 'call_agendada',     label: 'Call Agendada'      },
   { key: 'call_realizado',    label: 'Call Realizado'     },
   { key: 'visita_agendada',   label: 'Visita Agendada'    },
+  { key: 'visita_nao_realizada', label: 'Visita Não Realizada' },
+  { key: 'visita_realizada',  label: 'Visita Realizada'   },
+  { key: 'retorno',           label: 'Retorno'            },
   { key: 'proposta',          label: 'Proposta'           },
   { key: 'venda_finalizada',  label: 'Venda Finalizada'   },
 ];
@@ -229,6 +233,12 @@ function LeadCard({ lead, usuario }) {
           <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-faint)' }}>
             <i className="ti ti-user text-[14px] flex-shrink-0" aria-hidden="true" />
             <span className="truncate">{lead.corretorNome}</span>
+          </div>
+        )}
+        {textoInteracao(lead) && (
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-faint)' }} title={`Última interação em ${dataCompleta(ultimaInteracaoDe(lead))}`}>
+            <i className="ti ti-message-circle-2 text-[14px] flex-shrink-0" aria-hidden="true" />
+            <span className="truncate">{textoInteracao(lead)}</span>
           </div>
         )}
       </div>

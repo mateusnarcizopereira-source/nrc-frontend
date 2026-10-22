@@ -13,6 +13,9 @@ const ETAPAS_FUNIL = [
   { key: 'call_agendada',     label: 'Call\nAgendada' },
   { key: 'call_realizado',    label: 'Call\nRealizado' },
   { key: 'visita_agendada',   label: 'Visita\nAgendada' },
+  { key: 'visita_nao_realizada', label: 'Visita\nNão Realizada' },
+  { key: 'visita_realizada',  label: 'Visita\nRealizada' },
+  { key: 'retorno',           label: 'Retorno' },
   { key: 'proposta',          label: 'Proposta' },
   { key: 'venda_finalizada',  label: 'Venda\nFinalizada' },
 ];

@@ -10,6 +10,7 @@ import TarefaCard from '../components/TarefaCard';
 import { TarefaFormModal, ConcluirTarefaModal } from '../components/TarefaModais';
 import { numeroWhatsapp } from '../utils/whatsapp';
 import { textoAlerta, corAlerta } from '../utils/alertaLead';
+import { dataCompleta, ultimaInteracaoDe, rotuloInteracao } from '../utils/interacao';
 
 const TEMPERATURA_OPCOES = [
   { value: 'tentando_contato', label: 'Tentando Contato', temp: 'FRIO'       },
@@ -19,6 +20,9 @@ const TEMPERATURA_OPCOES = [
   { value: 'call_agendada',    label: 'Call Agendada',    temp: 'MORNO'      },
   { value: 'call_realizado',   label: 'Call Realizado',   temp: 'MORNO'      },
   { value: 'visita_agendada',  label: 'Visita Agendada',  temp: 'MORNO'      },
+  { value: 'visita_nao_realizada', label: 'Visita Não Realizada', temp: 'MORNO' },
+  { value: 'visita_realizada', label: 'Visita Realizada', temp: 'QUENTE'     },
+  { value: 'retorno',          label: 'Retorno',          temp: 'QUENTE'     },
   { value: 'proposta',         label: 'Proposta',          temp: 'QUENTE'    },
   { value: 'venda_finalizada', label: 'Venda Finalizada', temp: 'FERVENDO'   },
 ];
@@ -465,6 +469,11 @@ export default function LeadDetalhe() {
                   </span>
                   <span>·</span>
                   <span>{lead.origem}</span>
+                  <span>·</span>
+                  <span title={`Última interação em ${dataCompleta(ultimaInteracaoDe(lead))}`}>
+                    <i className="ti ti-message-circle-2 text-[12px] mr-0.5" aria-hidden="true" />
+                    Última interação: {dataCompleta(ultimaInteracaoDe(lead))} ({rotuloInteracao(ultimaInteracaoDe(lead))})
+                  </span>
                   <span>·</span>
                   {lead.primeiroContatoEm ? (
                     <>
