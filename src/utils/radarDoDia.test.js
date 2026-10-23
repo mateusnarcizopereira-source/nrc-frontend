@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { montarRelatorio, dataComPontos, construtorasDoRelatorio } from './radarDoDia.js';
+import { montarRelatorio, dataComPontos, construtorasDoRelatorio, periodoLegivel } from './radarDoDia.js';
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ler = (arq) => readFileSync(join(SRC, arq), 'utf8');
@@ -56,8 +56,20 @@ test('integração: o card está no GOD Painel, consulta só em ação do usuár
   assert.match(god, /<RadarDoDia \/>/);
   assert.doesNotMatch(card, /setInterval|setTimeout\([^)]*carregar|useEffect/); // o setTimeout existente só apaga a mensagem "copiado"
   assert.equal((card.match(/api\.get\(/g) || []).length, 1);
-  assert.match(card, /max=\{dados\.ontem\}/); // seletor só aceita dias fechados
+  assert.match(card, /max=\{dados\.ultimoFechado\}/); // seletor só aceita dias fechados
   assert.match(card, /parcial, até \{dados\.hoje\.parcialAte\}/);
   const trechoHoje = card.slice(card.indexOf('<section'), card.indexOf('Dia fechado'));
   assert.doesNotMatch(trechoHoje, /Copiar relatório/);
+});
+
+test('período legível: 21/10 22:01 → 22/10 22:00; entrada vazia não quebra', () => {
+  assert.equal(periodoLegivel({ de: '2026-10-21T22:01', ate: '2026-10-22T22:00' }), '21/10 22:01 → 22/10 22:00');
+  assert.equal(periodoLegivel(undefined), '');
+});
+
+test('a tela não fala mais em "fora da janela" nem usa o total da janela 10h–22h; mostra o período e o total', () => {
+  const card = ler('components/RadarDoDia.jsx');
+  assert.doesNotMatch(card, /foraDaJanela|totalJanela|janelaInicio|janelaFim|Fora da janela/);
+  assert.match(card, /Período: \{periodoLegivel\(dados\.periodo\)\}/);
+  assert.match(card, /Total do período[\s\S]*dados\.total/);
 });

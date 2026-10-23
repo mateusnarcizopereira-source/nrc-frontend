@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import api from '../services/api';
-import { montarRelatorio, construtorasDoRelatorio, dataComPontos } from '../utils/radarDoDia';
+import { montarRelatorio, construtorasDoRelatorio, dataComPontos, periodoLegivel } from '../utils/radarDoDia';
 
 // GOD Painel (só editor): leads que chegaram por construtora. Só consulta quando o card é aberto, a data muda ou o botão
 // "Atualizar" é clicado — nunca em laço nem por tempo. Mostra só contagens (nenhum dado de cliente).
@@ -8,8 +8,9 @@ function Tabela({ dados }) {
   if (!dados) return null;
   return (
     <div className="space-y-1.5">
+      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Período: {periodoLegivel(dados.periodo)}</p>
       {dados.porConstrutora.length === 0 && (
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Nenhum lead entre {dados.janelaInicio}h e {dados.janelaFim}h.</p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Nenhum lead neste período.</p>
       )}
       {dados.porConstrutora.map((c) => (
         <div key={c.construtora} className="flex items-center justify-between text-sm" style={{ color: 'var(--text)' }}>
@@ -17,12 +18,8 @@ function Tabela({ dados }) {
         </div>
       ))}
       <div className="flex items-center justify-between text-sm pt-1.5" style={{ borderTop: '1px solid rgba(var(--ink-rgb), 0.08)', color: 'var(--text)' }}>
-        <span className="font-semibold">Total ({dados.janelaInicio}h–{dados.janelaFim}h)</span><b>{dados.totalJanela}</b>
+        <span className="font-semibold">Total do período</span><b>{dados.total}</b>
       </div>
-      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-        Fora da janela no mesmo dia: <b>{dados.foraDaJanela}</b>
-        {dados.foraDaJanelaPorConstrutora.length > 0 && ` (${dados.foraDaJanelaPorConstrutora.map((c) => `${c.construtora}: ${c.leads}`).join(', ')})`}
-      </p>
     </div>
   );
 }
@@ -84,7 +81,7 @@ export default function RadarDoDia() {
           <section className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                Hoje {dados?.hoje && <span className="font-normal text-xs" style={{ color: 'var(--warning)' }}>· parcial, até {dados.hoje.parcialAte} (o dia ainda está em andamento)</span>}
+                Hoje {dados?.hoje && <span className="font-normal text-xs" style={{ color: 'var(--warning)' }}>· parcial, até {dados.hoje.parcialAte} (o período ainda está em andamento)</span>}
               </p>
               <button onClick={() => carregar('hoje')} disabled={carregando} className="text-xs px-3 py-1.5 rounded font-medium"
                 style={{ background: 'var(--accent)', color: '#fff', opacity: carregando ? 0.6 : 1 }}>
@@ -100,9 +97,9 @@ export default function RadarDoDia() {
                 Dia fechado {dados?.dia && <span className="font-normal text-xs" style={{ color: 'var(--text-tertiary)' }}>· {dataComPontos(dados.dia.data)}</span>}
               </p>
               <div className="flex items-center gap-2">
-                {dados?.ontem && (
-                  <input type="date" value={dados.dia?.data || dados.ontem} max={dados.ontem} disabled={carregando}
-                    onChange={(e) => e.target.value && e.target.value <= dados.ontem && carregar('dia', e.target.value)}
+                {dados?.ultimoFechado && (
+                  <input type="date" value={dados.dia?.data || dados.ultimoFechado} max={dados.ultimoFechado} disabled={carregando}
+                    onChange={(e) => e.target.value && e.target.value <= dados.ultimoFechado && carregar('dia', e.target.value)}
                     className="text-xs px-2 py-1 rounded" style={{ border: '1px solid rgba(var(--ink-rgb), 0.15)', background: 'transparent', color: 'var(--text)' }} />
                 )}
                 <button onClick={copiar} disabled={!dados?.dia || semConstrutoras || carregando} className="text-xs px-3 py-1.5 rounded font-medium"

@@ -78,6 +78,8 @@ function itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas }) {
     itens.push({ to: '/relatorios', icon: 'chart-bar', label: 'Relatórios', grupo: 'Configurações' });
     itens.push({ to: '/motivos-descarte', icon: 'adjustments-horizontal', label: 'Motivos Descarte', grupo: 'Configurações' });
     itens.push({ to: '/corretores', icon: 'user-check', label: 'Corretores', grupo: 'Configurações' });
+    // GOD Painel no "Mais": como aba direta ficava por último na barra (overflow-x-auto) e saía da tela.
+    itens.push({ to: '/god', icon: 'settings', label: 'GOD Painel', grupo: 'Configurações' });
   } else if (temPerfil('gerente')) {
     // Diretor (único perfil que chega aqui: acima de gerente, mas não editor)
     // — grupo "Gestão" no Mais, exatamente como era antes deste ajuste.
@@ -98,10 +100,6 @@ function itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas }) {
   if (['corretor', 'gerente', 'editor'].includes(perfil)) {
     itens.push({ to: '/clientes', icon: 'address-book', label: 'Clientes', grupo: null });
     itens.push({ to: '/campanhas', icon: 'speakerphone', label: 'Oferta Ativa', grupo: null });
-  }
-
-  if (perfil === 'editor') {
-    itens.push({ to: '/god', icon: 'settings', label: 'GOD Painel', grupo: null });
   }
 
   return itens;
