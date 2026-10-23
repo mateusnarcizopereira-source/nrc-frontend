@@ -5,6 +5,7 @@ import AutomacoesPainel from '../components/AutomacoesPainel';
 import PausasDistribuicaoPainel from '../components/PausasDistribuicaoPainel';
 import CorretoresSemPush from '../components/CorretoresSemPush';
 import SaudeDoPush from '../components/SaudeDoPush';
+import RadarDoDia from '../components/RadarDoDia';
 
 // ── Toggle ────────────────────────────────────────────────────
 function Toggle({ ativo, onChange, carregando }) {
@@ -363,6 +364,9 @@ export default function GodPainel() {
           <Toggle ativo={modoSolo} onChange={toggleModoSolo} carregando={togglingModo} />
         </div>
       </div>
+
+      {/* ── Radar do dia (leads por construtora) ────────────── */}
+      <RadarDoDia />
 
       {/* ── Automações (Fase 5) ─────────────────────────────── */}
       <AutomacoesPainel />
