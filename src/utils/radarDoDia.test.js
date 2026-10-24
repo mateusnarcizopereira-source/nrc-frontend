@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { montarRelatorio, dataComPontos, construtorasDoRelatorio, periodoLegivel } from './radarDoDia.js';
+import { montarRelatorio, dataComPontos, construtorasDoRelatorio } from './radarDoDia.js';
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ler = (arq) => readFileSync(join(SRC, arq), 'utf8');
@@ -62,14 +62,9 @@ test('integração: o card está no GOD Painel, consulta só em ação do usuár
   assert.doesNotMatch(trechoHoje, /Copiar relatório/);
 });
 
-test('período legível: 21/10 22:01 → 22/10 22:00; entrada vazia não quebra', () => {
-  assert.equal(periodoLegivel({ de: '2026-10-21T22:01', ate: '2026-10-22T22:00' }), '21/10 22:01 → 22/10 22:00');
-  assert.equal(periodoLegivel(undefined), '');
-});
-
-test('a tela não fala mais em "fora da janela" nem usa o total da janela 10h–22h; mostra o período e o total', () => {
-  const card = ler('components/RadarDoDia.jsx');
-  assert.doesNotMatch(card, /foraDaJanela|totalJanela|janelaInicio|janelaFim|Fora da janela/);
-  assert.match(card, /Período: \{periodoLegivel\(dados\.periodo\)\}/);
-  assert.match(card, /Total do período[\s\S]*dados\.total/);
+test('a tela mostra só o total do dia por construtora: sem "fora da janela", sem janela 10h–22h e sem período deslocado', () => {
+  const card = ler('components/RadarDoDia.jsx'); const util = ler('utils/radarDoDia.js');
+  assert.doesNotMatch(card, /foraDaJanela|totalJanela|janelaInicio|janelaFim|Fora da janela|periodo|Período|22:01/);
+  assert.doesNotMatch(util, /periodoLegivel|22:01/);
+  assert.match(card, /Total do dia[\s\S]*dados\.total/);
 });

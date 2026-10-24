@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import api from '../services/api';
-import { montarRelatorio, construtorasDoRelatorio, dataComPontos, periodoLegivel } from '../utils/radarDoDia';
+import { montarRelatorio, construtorasDoRelatorio, dataComPontos } from '../utils/radarDoDia';
 
 // GOD Painel (só editor): leads que chegaram por construtora. Só consulta quando o card é aberto, a data muda ou o botão
 // "Atualizar" é clicado — nunca em laço nem por tempo. Mostra só contagens (nenhum dado de cliente).
@@ -8,9 +8,8 @@ function Tabela({ dados }) {
   if (!dados) return null;
   return (
     <div className="space-y-1.5">
-      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Período: {periodoLegivel(dados.periodo)}</p>
       {dados.porConstrutora.length === 0 && (
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Nenhum lead neste período.</p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Nenhum lead neste dia.</p>
       )}
       {dados.porConstrutora.map((c) => (
         <div key={c.construtora} className="flex items-center justify-between text-sm" style={{ color: 'var(--text)' }}>
@@ -18,7 +17,7 @@ function Tabela({ dados }) {
         </div>
       ))}
       <div className="flex items-center justify-between text-sm pt-1.5" style={{ borderTop: '1px solid rgba(var(--ink-rgb), 0.08)', color: 'var(--text)' }}>
-        <span className="font-semibold">Total do período</span><b>{dados.total}</b>
+        <span className="font-semibold">Total do dia</span><b>{dados.total}</b>
       </div>
     </div>
   );
@@ -81,7 +80,7 @@ export default function RadarDoDia() {
           <section className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                Hoje {dados?.hoje && <span className="font-normal text-xs" style={{ color: 'var(--warning)' }}>· parcial, até {dados.hoje.parcialAte} (o período ainda está em andamento)</span>}
+                Hoje {dados?.hoje && <span className="font-normal text-xs" style={{ color: 'var(--warning)' }}>· parcial, até {dados.hoje.parcialAte} (o dia ainda está em andamento)</span>}
               </p>
               <button onClick={() => carregar('hoje')} disabled={carregando} className="text-xs px-3 py-1.5 rounded font-medium"
                 style={{ background: 'var(--accent)', color: '#fff', opacity: carregando ? 0.6 : 1 }}>
