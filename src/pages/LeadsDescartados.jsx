@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import ContatoOculto from '../components/ContatoOculto';
 
 export default function LeadsDescartados() {
   const [leads, setLeads] = useState([]);
@@ -70,7 +71,7 @@ export default function LeadsDescartados() {
                   </div>
                   <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--text-muted)' }}>{lead.empreendimento}</p>
                   <div className="flex flex-wrap gap-4 mt-2 text-xs" style={{ color: 'var(--text-faint)' }}>
-                    <span>{lead.telefone}</span>
+                    <span>{lead.contatoOculto ? <ContatoOculto /> : lead.telefone}</span>
                     {lead.corretorNome && <span>Corretor: {lead.corretorNome}</span>}
                   </div>
                   <div

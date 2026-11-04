@@ -4,6 +4,7 @@ import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import BadgeStatus from '../components/BadgeStatus';
 import KanbanLeads from '../components/KanbanLeads';
+import ContatoOculto from '../components/ContatoOculto';
 import ImportarLeadsModal from '../components/ImportarLeadsModal';
 import { numeroWhatsapp } from '../utils/whatsapp';
 import { textoAlerta, corAlerta } from '../utils/alertaLead';
@@ -107,7 +108,7 @@ export default function Leads() {
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           className="input sm:max-w-xs"
-          placeholder="Buscar por nome, telefone, empreendimento..."
+          placeholder={leads.some((l) => l.contatoOculto) ? 'Buscar por nome, empreendimento...' : 'Buscar por nome, telefone, empreendimento...'}
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
@@ -217,7 +218,12 @@ function LeadCard({ lead, usuario }) {
       </Link>
 
       <div className="mt-3 space-y-1.5 flex-1">
-        {lead.telefone && (
+        {lead.contatoOculto ? (
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <i className="ti ti-phone text-[14px] flex-shrink-0" aria-hidden="true" />
+            <ContatoOculto />
+          </div>
+        ) : lead.telefone && (
           <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
             <i className="ti ti-phone text-[14px] flex-shrink-0" aria-hidden="true" />
             <span className="truncate">{lead.telefone}</span>
@@ -243,7 +249,7 @@ function LeadCard({ lead, usuario }) {
         )}
       </div>
 
-      {lead.telefone && (
+      {!lead.contatoOculto && lead.telefone && (
         <a
           href={`https://wa.me/${numeroWhatsapp(lead.telefone)}`}
           target="_blank" rel="noopener noreferrer"

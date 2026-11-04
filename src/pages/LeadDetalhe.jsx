@@ -9,6 +9,7 @@ import SeletorEmpreendimento from '../components/SeletorEmpreendimento';
 import TarefaCard from '../components/TarefaCard';
 import { TarefaFormModal, ConcluirTarefaModal } from '../components/TarefaModais';
 import { numeroWhatsapp } from '../utils/whatsapp';
+import ContatoOculto from '../components/ContatoOculto';
 import { textoAlerta, corAlerta } from '../utils/alertaLead';
 import { dataCompleta, ultimaInteracaoDe, rotuloInteracao } from '../utils/interacao';
 
@@ -406,8 +407,8 @@ export default function LeadDetalhe() {
   // Campos do "Dados do lead" — grid de dois por linha, unificado (dados
   // fixos + perfil de busca), sem repetir Origem duas vezes.
   const camposFixos = [
-    { label: 'Telefone', valor: lead.telefone },
-    { label: 'E-mail', valor: lead.email || '—' },
+    { label: 'Telefone', valor: lead.contatoOculto ? <ContatoOculto /> : lead.telefone },
+    { label: 'E-mail', valor: lead.contatoOculto ? <ContatoOculto tipo="email" /> : (lead.email || '—') },
   ];
   const camposPerfil = [
     { label: 'Empreendimento', valor: lead.empreendimento || null },
@@ -551,13 +552,13 @@ export default function LeadDetalhe() {
                 {/* Sem telefone (ex.: conta diretor com contato restrito —
                     o backend nem manda o campo) não mostra "Ligar"/"WhatsApp":
                     botão pra tel:undefined seria enganoso, não só feio. */}
-                {lead.telefone && (
+                {!lead.contatoOculto && lead.telefone && (
                   <>
                     <BotaoAcaoHeader href={`tel:${telLimpo}`} icon="phone" label="Ligar" cor="var(--accent-hover)" corRgb="var(--accent-rgb)" />
                     <BotaoAcaoHeader href={`https://wa.me/${numeroWhatsapp(telLimpo)}`} icon="brand-whatsapp" label="WhatsApp" cor="var(--success)" corRgb="var(--success-rgb)" alvo="_blank" />
                   </>
                 )}
-                {lead.email && (
+                {!lead.contatoOculto && lead.email && (
                   <BotaoAcaoHeader href={`mailto:${lead.email}`} icon="mail" label="E-mail" cor="var(--text-secondary)" corRgb="var(--ink-rgb)" />
                 )}
                 {podeEscrever && materiaisEmpreendimento.length > 0 && (

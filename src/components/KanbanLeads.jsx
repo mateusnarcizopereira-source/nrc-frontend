@@ -7,6 +7,7 @@ import {
 import api from '../services/api';
 import { STATUS_CONFIG } from './BadgeStatus';
 import { useAtendimentoVigente } from '../utils/useAtendimentoVigente';
+import ContatoOculto from './ContatoOculto';
 import { textoInteracao, dataCompleta, ultimaInteracaoDe } from '../utils/interacao';
 
 // Estágio automático: só o sistema coloca o lead aqui (nascimento). A coluna
@@ -72,7 +73,7 @@ function CardKanban({ lead, overlay = false }) {
       {lead.empreendimento && (
         <p className="text-xs truncate mt-0.5" style={{ color: 'var(--accent)' }}>{lead.empreendimento}</p>
       )}
-      <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{lead.telefone}</p>
+      <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{lead.contatoOculto ? <ContatoOculto /> : lead.telefone}</p>
       <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{tempoNoEstagio(lead.statusDesde)}</p>
       {textoInteracao(lead) && (
         <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-faint)' }} title={`Última interação em ${dataCompleta(ultimaInteracaoDe(lead))}`}>{textoInteracao(lead)}</p>
