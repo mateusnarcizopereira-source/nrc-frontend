@@ -219,6 +219,13 @@ export default function LeadDetalhe() {
   function carregarTarefas() {
     api.get('/tarefas', { params: { leadId: id } }).then((r) => setTarefasLead(r.data)).catch(() => {});
   }
+  // O registro do contato conclui no servidor a tarefa automática "Primeiro contato". Só recarrega se ela estiver pendente
+  // nesta tela: nenhuma leitura extra no caso comum.
+  function atualizarSeTarefaAutomaticaPendente() {
+    if (!tarefasLead.some((t) => t.status === 'Pendente' && t.titulo === 'Primeiro contato' && t.criadoPorId === 'sistema')) return;
+    carregarTarefas();
+    carregarComentarios();
+  }
   function carregarComentarios() {
     api.get(`/leads/${id}/comentarios`).then((r) => setComentarios(r.data)).catch(() => {});
   }
@@ -314,6 +321,7 @@ export default function LeadDetalhe() {
       const res = await api.patch(`/leads/${id}/status`, { status });
       setLead(res.data);
       carregarComentarios(); // mudança de status vira entrada na timeline
+      atualizarSeTarefaAutomaticaPendente();
     } catch (e) {
       avisarErro(e, 'Não foi possível alterar o status.');
       // o select é controlado por lead.status: força a releitura para ele voltar ao valor real
@@ -331,6 +339,7 @@ export default function LeadDetalhe() {
     try {
       const res = await api.post(`/leads/${id}/primeiro-contato`);
       setLead(res.data);
+      atualizarSeTarefaAutomaticaPendente();
     } catch (e) {
       avisarErro(e, 'Não foi possível registrar o contato.');
       if (![403, 409].includes(e.response?.status)) recarregarLead();
@@ -352,6 +361,7 @@ export default function LeadDetalhe() {
       const res = await api.post(`/leads/${id}/comentarios`, { texto: novoComentario });
       setComentarios([res.data, ...comentarios]);
       setNovoComentario('');
+      atualizarSeTarefaAutomaticaPendente();
     } catch (e) {
       // o texto continua na caixa (nada foi gravado): o corretor pode tentar de novo
       avisarErro(e, 'Não foi possível enviar o comentário.');
@@ -365,6 +375,7 @@ export default function LeadDetalhe() {
     try {
       const res = await api.post(`/leads/${id}/visitas`, visitaForm);
       setVisitas([res.data, ...visitas]);
+      atualizarSeTarefaAutomaticaPendente();
       setVisitaForm({ data: '', hora: '', empreendimento: '', comentario: '', gerenteId: '' });
       setModalVisita(false);
     } catch (e) {
