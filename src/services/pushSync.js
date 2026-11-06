@@ -2,13 +2,29 @@
 // Nunca abre diálogo de permissão e nunca lança: push é um extra, não pode atrapalhar o app.
 import api from './api';
 import { obterTokenSemPerguntar } from './firebaseClient';
-import { lerGuardado, gravarGuardado, limparGuardado, podePularVerificacao, precisaEnviar } from '../utils/pushToken';
+import { lerGuardado, gravarGuardado, limparGuardado, podePularVerificacao, precisaEnviar, syncAtualizado, marcarSyncAtualizado, tokenAnteriorDe } from '../utils/pushToken';
+import { descreverAparelho, idDoAparelho } from '../utils/aparelho';
+
+// Quem é este aparelho, só para diagnóstico. Nunca sai pela API.
+function dadosDoAparelho() {
+  const instalado = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
+  return { id: idDoAparelho(localStorage), ...descreverAparelho(navigator.userAgent, instalado) };
+}
+
+function enviarToken(token, usuarioId, guardado) {
+  return api.post('/usuarios/me/fcm-token', {
+    token,
+    tokenAnterior: tokenAnteriorDe({ guardado, tokenAtual: token, usuarioId }),
+    aparelho: dadosDoAparelho(),
+  });
+}
 
 // Login e abertura do app (e volta à aba): lê o token atual do FCM — cobre a renovação automática, porque o
 // getToken devolve o token vigente — e só envia ao backend se mudou, se mudou a conta ou se passou 1 dia.
-export async function sincronizarToken(usuario, { forcar = false } = {}) {
+export async function sincronizarToken(usuario, { forcar: forcarPedido = false } = {}) {
   try {
     if (!usuario?.id) return;
+    const forcar = forcarPedido || !syncAtualizado(localStorage);
     const agora = Date.now();
     const guardado = lerGuardado(localStorage);
     if (podePularVerificacao({ guardado, usuarioId: usuario.id, agora, forcar })) return;
@@ -18,15 +34,19 @@ export async function sincronizarToken(usuario, { forcar = false } = {}) {
       gravarGuardado(localStorage, { token: tokenAtual, usuarioId: usuario.id, em: agora }); // só renova o "verificado em"
       return;
     }
-    await api.post('/usuarios/me/fcm-token', { token: tokenAtual });
+    await enviarToken(tokenAtual, usuario.id, guardado);
     gravarGuardado(localStorage, { token: tokenAtual, usuarioId: usuario.id, em: agora });
-  } catch { /* silencioso */ }
+    marcarSyncAtualizado(localStorage);
+  } catch (e) {
+    console.error('[Push] Falha ao sincronizar o token:', e?.message);
+  }
 }
 
 // Ativação manual (tela Notificações / convite): envia e guarda, para o logout saber qual token remover.
 export async function registrarTokenNoBackend(usuarioId, token) {
-  await api.post('/usuarios/me/fcm-token', { token });
+  await enviarToken(token, usuarioId, lerGuardado(localStorage));
   if (usuarioId) gravarGuardado(localStorage, { token, usuarioId, em: Date.now() });
+  marcarSyncAtualizado(localStorage);
 }
 
 // Logout: tira o token deste aparelho da conta que está saindo. SÍNCRONO e sem espera: dispara o DELETE com o JWT
@@ -41,6 +61,8 @@ export function removerTokenDoAparelho(jwt) {
       headers: { 'content-type': 'application/json', authorization: `Bearer ${jwt}` },
       body: JSON.stringify({ token: guardado.token }),
       keepalive: true,
-    }).catch(() => {});
-  } catch { /* silencioso */ }
+    }).catch((e) => console.error('[Push] Falha ao retirar o token no logout:', e?.message));
+  } catch (e) {
+    console.error('[Push] Falha ao retirar o token no logout:', e?.message);
+  }
 }

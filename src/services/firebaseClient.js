@@ -71,7 +71,8 @@ export async function obterTokenSemPerguntar() {
       new Promise((_, rej) => setTimeout(() => rej(new Error('service worker indisponível')), 5000)),
     ]);
     return (await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration })) || null;
-  } catch {
+  } catch (e) {
+    console.error('[Push] Falha ao ler o token FCM:', e?.message);
     return null;
   }
 }
@@ -88,7 +89,8 @@ export function ouvirMensagensEmForeground(callback) {
   try {
     const messaging = getMessaging(app);
     return onMessage(messaging, callback);
-  } catch {
+  } catch (e) {
+    console.error('[Push] Falha ao ouvir mensagens com o app aberto:', e?.message);
     return () => {};
   }
 }

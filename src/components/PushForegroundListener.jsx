@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ouvirMensagensEmForeground } from '../services/firebaseClient';
+import { mostrarAvisoDoSistema } from '../services/avisoDoSistema';
 
 // Push de lead novo (ou de teste) chegando com o app ABERTO — sem isso,
 // simplesmente sumia (bug reportado 06/09: "ativei, status verde, mas o
@@ -21,24 +22,12 @@ import { ouvirMensagensEmForeground } from '../services/firebaseClient';
 export default function PushForegroundListener() {
   useEffect(() => {
     const unsubscribe = ouvirMensagensEmForeground((payload) => {
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
-      const titulo = payload.notification?.title || 'NRC';
-      const corpo = payload.notification?.body || '';
-      const link = payload.data?.link || '/';
-
-      try {
-        const notif = new Notification(titulo, { body: corpo, icon: '/favicon.svg' });
-        // Mesmo destino do clique em segundo plano (sw.js): abre a tela do lead.
-        notif.onclick = () => {
-          window.focus();
-          window.location.assign(link);
-          notif.close();
-        };
-      } catch {
-        // Notification() pode falhar em navegadores/ambientes exóticos —
-        // nunca deve quebrar o app por causa de um push de teste.
-      }
+      mostrarAvisoDoSistema(payload.notification?.title || 'NRC', {
+        corpo: payload.notification?.body || '',
+        link: payload.data?.link || '/',
+        tag: payload.data?.tag,
+        tipo: 'primeiro_plano',
+      });
     });
 
     return () => unsubscribe();

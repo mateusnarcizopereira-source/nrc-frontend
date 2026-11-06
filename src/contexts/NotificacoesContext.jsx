@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 import api from '../services/api';
 import { useAuth } from './AuthContext';
 import { conectarSocket } from '../services/socket';
+import { mostrarAvisoDoSistema } from '../services/avisoDoSistema';
+import { lerGuardado } from '../utils/pushToken';
 import { contarDaLista, contadoresAposNova, contadoresAposLida, CONTADORES_ZERO } from '../utils/notificacoes';
 
 const Ctx = createContext(null);
@@ -65,8 +67,9 @@ export function NotificacoesProvider({ children }) {
       setLista((prev) => [notif, ...prev].slice(0, 50));
       setContadores((c) => contadoresAposNova(c, notif));
       if (somRef.current && TIPOS_COM_SOM.has(notif.tipo)) tocarSom();
-      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-        try { new Notification(notif.titulo || 'NRC', { body: notif.mensagem || '' }); } catch {}
+      // Aba em segundo plano: com push ativo neste aparelho, o aviso vem pelo push; mostrar aqui também duplicaria.
+      if (document.hidden && !lerGuardado(localStorage)?.token) {
+        mostrarAvisoDoSistema(notif.titulo || 'NRC', { corpo: notif.mensagem || '', link: notif.link || '/', tipo: 'tempo_real' });
       }
     };
     socket?.on('notificacao_nova', onNova);
@@ -81,7 +84,7 @@ export function NotificacoesProvider({ children }) {
         if (audioCtx.state === 'suspended') audioCtx.resume();
       } catch {}
       if ('Notification' in window && Notification.permission === 'default') {
-        try { Notification.requestPermission(); } catch {}
+        try { Notification.requestPermission(); } catch (e) { console.error('[Push] Falha ao pedir permissão:', e?.message); }
       }
       window.removeEventListener('pointerdown', prime);
     };

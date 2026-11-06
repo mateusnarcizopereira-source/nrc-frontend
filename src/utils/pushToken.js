@@ -4,6 +4,8 @@
 export const CHAVE_TOKEN = 'nrc_fcm_token';        // último token enviado deste aparelho
 export const CHAVE_USUARIO = 'nrc_fcm_usuario';    // a quem ele foi enviado
 export const CHAVE_EM = 'nrc_fcm_sync_em';         // quando (ms)
+export const CHAVE_VERSAO = 'nrc_fcm_sync_versao'; // versão do que é enviado ao backend
+export const VERSAO_SYNC = '2';                    // 2: inclui os dados do aparelho
 export const INTERVALO_VERIFICAR_MS = 12 * 3600e3; // não consulta o FCM de novo antes disso (mesmo usuário)
 export const INTERVALO_REENVIAR_MS = 24 * 3600e3;  // reenvia mesmo sem mudança, no máximo 1x por dia
 
@@ -21,6 +23,21 @@ export function gravarGuardado(storage, { token, usuarioId, em }) {
 
 export function limparGuardado(storage) {
   try { storage.removeItem(CHAVE_TOKEN); storage.removeItem(CHAVE_USUARIO); storage.removeItem(CHAVE_EM); } catch { /* ignora */ }
+}
+
+// Este aparelho já enviou o token no formato atual? Se não, envia na próxima abertura, sem esperar o intervalo.
+export function syncAtualizado(storage) {
+  try { return storage.getItem(CHAVE_VERSAO) === VERSAO_SYNC; } catch { return true; }
+}
+
+export function marcarSyncAtualizado(storage) {
+  try { storage.setItem(CHAVE_VERSAO, VERSAO_SYNC); } catch { /* sem armazenamento: tenta de novo na próxima abertura */ }
+}
+
+// Token que este aparelho usava antes, para o backend retirar: só se era da mesma conta (outra conta cuida do dela).
+export function tokenAnteriorDe({ guardado, tokenAtual, usuarioId }) {
+  if (!guardado?.token || guardado.token === tokenAtual) return null;
+  return String(guardado.usuarioId) === String(usuarioId) ? guardado.token : null;
 }
 
 // Vale a pena nem consultar o FCM? (mesmo usuário, verificado há pouco)

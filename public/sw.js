@@ -24,23 +24,16 @@ try {
 
   if (!FIREBASE_CONFIG_PUSH.apiKey.startsWith('COLE_AQUI')) {
     firebase.initializeApp(FIREBASE_CONFIG_PUSH);
-    const messaging = firebase.messaging();
-
-    messaging.onBackgroundMessage((payload) => {
-      const titulo = payload.notification?.title || 'NRC';
-      const corpo = payload.notification?.body || '';
-      self.registration.showNotification(titulo, {
-        body: corpo,
-        icon: '/favicon.svg',
-        data: payload.data || {},
-      });
-    });
+    // Em segundo plano, o próprio SDK já mostra o aviso quando o push traz `notification`, com ícone, tag e link. Mostrar de
+    // novo aqui, num onBackgroundMessage, faria cada push aparecer duas vezes.
+    firebase.messaging();
   }
 } catch (e) {
   console.error('[SW] FCM não inicializado (não afeta o cache offline):', e);
 }
 
-// Clique na notificação (Tarefa 3) — abre direto a página do lead.
+// Clique na notificação mostrada com o app aberto (PushForegroundListener). As mostradas pelo SDK são tratadas por ele, com o
+// link do push, e não chegam aqui.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const link = event.notification.data?.link || '/';

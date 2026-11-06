@@ -59,7 +59,7 @@ export default function Notificacoes() {
       const token = await pedirPermissaoEObterToken();
       if (token) {
         setStatus('ativo');
-        registrarTokenNoBackend(usuario?.id, token).catch(() => {}); // garante que está salvo, idempotente
+        registrarTokenNoBackend(usuario?.id, token).catch((e) => console.error('[Push] Falha ao salvar o token:', e?.message)); // garante que está salvo, idempotente
       } else {
         setStatus('desativado');
       }
