@@ -23,7 +23,7 @@ export default function OperadorFila() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [acaoEmAndamento, setAcaoEmAndamento] = useState(null); // corretorId sendo incluído/movido
-  const [chaveAtiva, setChaveAtiva] = useState(null); // fila aberta, com a fila por empreendimento ligada
+  const [chaveAtiva, setChaveAtiva] = useState(null); // fila aberta, com as filas ligadas
 
   const carregar = useCallback(async () => {
     try {
@@ -42,7 +42,7 @@ export default function OperadorFila() {
     return () => clearInterval(id);
   }, [carregar]);
 
-  // Fila por empreendimento: o backend manda `filas` (só as que este usuário pode ver); sem elas, a fila única de sempre.
+  // Filas ligadas: o backend manda `filas` (só as que este usuário pode ver); sem elas, a fila única de sempre.
   const filas = dados?.filas;
   const filaAtiva = filas ? (filas.find((f) => f.chave === chaveAtiva) || filas[0] || null) : null;
 
@@ -120,7 +120,7 @@ export default function OperadorFila() {
       ) : sorteada ? (
         <>
           {filas && filas.length > 0 && (
-            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filas por empreendimento">
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filas do dia">
               {filas.map((f) => (
                 <button key={f.chave} role="tab" aria-selected={filaAtiva?.chave === f.chave} onClick={() => setChaveAtiva(f.chave)}
                   className="text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
@@ -145,7 +145,7 @@ export default function OperadorFila() {
               <div className="text-center py-10 px-5">
                 <i className="ti ti-user-off text-[32px]" style={{ color: 'var(--text-faint)' }} aria-hidden="true" />
                 <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-                  {!filas ? 'Ninguém bateu ponto hoje.' : filas.length ? 'Ninguém na fila deste empreendimento hoje.' : 'Fila indisponível no momento.'}
+                  {!filas ? 'Ninguém bateu ponto hoje.' : filas.length ? 'Ninguém nesta fila hoje.' : 'Fila indisponível no momento.'}
                 </p>
                 {ehEditor && (
                   <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>
