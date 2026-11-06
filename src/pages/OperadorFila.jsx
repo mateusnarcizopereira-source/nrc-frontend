@@ -23,6 +23,7 @@ export default function OperadorFila() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [acaoEmAndamento, setAcaoEmAndamento] = useState(null); // corretorId sendo incluído/movido
+  const [chaveAtiva, setChaveAtiva] = useState(null); // fila aberta, com a fila por empreendimento ligada
 
   const carregar = useCallback(async () => {
     try {
@@ -41,6 +42,10 @@ export default function OperadorFila() {
     return () => clearInterval(id);
   }, [carregar]);
 
+  // Fila por empreendimento: o backend manda `filas` (só as que este usuário pode ver); sem elas, a fila única de sempre.
+  const filas = dados?.filas;
+  const filaAtiva = filas ? (filas.find((f) => f.chave === chaveAtiva) || filas[0] || null) : null;
+
   async function incluir(corretorId) {
     setAcaoEmAndamento(corretorId);
     try {
@@ -55,7 +60,7 @@ export default function OperadorFila() {
   async function mover(corretorId, novaPosicao) {
     setAcaoEmAndamento(corretorId);
     try {
-      await api.post('/sorteio/mover', { corretorId, novaPosicao });
+      await api.post('/sorteio/mover', { corretorId, novaPosicao, ...(filaAtiva ? { chave: filaAtiva.chave } : {}) });
       await carregar();
     } catch (e) {
       setErro(e.response?.data?.erro || 'Erro ao mover na fila.');
@@ -77,7 +82,7 @@ export default function OperadorFila() {
     setAcaoEmAndamento(null);
   }
 
-  const ordem = dados?.ordem || [];
+  const ordem = filas ? (filaAtiva?.ordem || []) : (dados?.ordem || []);
   const fora = dados?.fora || [];
   const aguardando = dados?.aguardandoSorteio || [];
   const sorteada = Boolean(dados?.sorteada);
@@ -114,12 +119,24 @@ export default function OperadorFila() {
         </div>
       ) : sorteada ? (
         <>
+          {filas && filas.length > 0 && (
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filas por empreendimento">
+              {filas.map((f) => (
+                <button key={f.chave} role="tab" aria-selected={filaAtiva?.chave === f.chave} onClick={() => setChaveAtiva(f.chave)}
+                  className="text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+                  style={filaAtiva?.chave === f.chave ? { background: 'var(--accent)', color: '#fff' } : { background: 'var(--surface-2)', color: 'var(--text-tertiary)' }}>
+                  {f.nome}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Ordem sorteada do dia */}
           <div className="card p-0 overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-color)' }}>
               <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
                 <i className="ti ti-list-numbers text-[16px]" style={{ color: 'var(--success)' }} aria-hidden="true" />
-                Ordem de hoje
+                {filaAtiva ? filaAtiva.nome : 'Ordem de hoje'}
                 <span className="font-normal" style={{ color: 'var(--text-muted)' }}>({ordem.length})</span>
               </h2>
             </div>
@@ -127,7 +144,9 @@ export default function OperadorFila() {
             {ordem.length === 0 ? (
               <div className="text-center py-10 px-5">
                 <i className="ti ti-user-off text-[32px]" style={{ color: 'var(--text-faint)' }} aria-hidden="true" />
-                <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Ninguém bateu ponto hoje.</p>
+                <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+                  {!filas ? 'Ninguém bateu ponto hoje.' : filas.length ? 'Ninguém na fila deste empreendimento hoje.' : 'Fila indisponível no momento.'}
+                </p>
                 {ehEditor && (
                   <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>
                     Inclua alguém na lista "Fora" abaixo pra a fila de hoje começar a receber leads.

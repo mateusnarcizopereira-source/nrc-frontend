@@ -121,7 +121,7 @@ export default function Dashboard() {
       api.get('/sorteio/fila-do-dia').catch(() => ({ data: null })),
     ]);
     setLeads(leadsRes.data);
-    setFila(filaRes.data?.ordem?.length ? filaRes.data : null);
+    setFila(filaRes.data?.ordem?.length || filaRes.data?.filas?.length ? filaRes.data : null);
   }
 
   // Bug corrigido: presença era só useState local (sempre false no F5,
@@ -139,7 +139,7 @@ export default function Dashboard() {
 
   async function carregarFila() {
     const res = await api.get('/sorteio/fila-do-dia').catch(() => ({ data: null }));
-    setFila(res.data?.ordem?.length ? res.data : null);
+    setFila(res.data?.ordem?.length || res.data?.filas?.length ? res.data : null);
   }
 
   async function togglePresenca() {
@@ -249,6 +249,18 @@ export default function Dashboard() {
               Ver tudo
             </Link>
           </div>
+          {fila.filas ? (
+            <div className="space-y-1.5">
+              {fila.filas.map((f) => (
+                <div key={f.chave} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="truncate" style={{ color: 'var(--text-tertiary)' }}>{f.nome}</span>
+                  <span className="font-medium flex-shrink-0" style={{ color: f.ordem[0] ? 'var(--text)' : 'var(--text-faint)' }}>
+                    {f.ordem[0] ? f.ordem[0].corretorNome.split(' ')[0] : '—'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
           <div className="flex flex-wrap gap-2">
             {fila.ordem.map((c, i) => (
               <div key={c.corretorId}
@@ -264,6 +276,7 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
