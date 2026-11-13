@@ -9,6 +9,7 @@ const ETAPAS_FUNIL = [
   { key: 'tentando_contato',  label: 'Tentando\nContato' },
   { key: 'material_enviado',  label: 'Material\nEnviado' },
   { key: 'sem_resposta',      label: 'Sem\nResposta' },
+  { key: 'tentando_agendar_visita', label: 'Tentando\nAgendar Visita' },
   { key: 'meeting_agendado',  label: 'Meeting\nAgendado' },
   { key: 'call_agendada',     label: 'Call\nAgendada' },
   { key: 'call_realizado',    label: 'Call\nRealizado' },

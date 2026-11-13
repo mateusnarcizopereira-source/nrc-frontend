@@ -62,6 +62,7 @@
      vermelho da marca, nunca cinza (item 2 do ajuste). */
   --coral: #E2725B;
   --gold: #C9982A;
+  --gold-rgb: 201, 152, 42;
   --bordo: #7B241C;
 
   /* Ajuste Fase 1 (round 2): borda visível nos cards + fundo alternado entre

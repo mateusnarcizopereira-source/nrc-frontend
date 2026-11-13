@@ -28,6 +28,12 @@ const config = {
     corRgb: 'var(--teal-rgb)',
     cor: 'var(--teal)',
   },
+  tentando_agendar_visita: {
+    label: 'Tentando Agendar Visita',
+    temp: 'MORNO',
+    corRgb: 'var(--gold-rgb)',
+    cor: 'var(--gold)',
+  },
   meeting_agendado: {
     label: 'Meeting Agendado',
     temp: 'QUENTE',

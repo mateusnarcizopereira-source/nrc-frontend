@@ -17,6 +17,7 @@ const TEMPERATURA_OPCOES = [
   { value: 'tentando_contato', label: 'Tentando Contato', temp: 'FRIO'       },
   { value: 'material_enviado', label: 'Material Enviado', temp: 'MEIO-MORNO' },
   { value: 'sem_resposta',     label: 'Sem Resposta',     temp: 'FRIO'       },
+  { value: 'tentando_agendar_visita', label: 'Tentando Agendar Visita', temp: 'MEIO-MORNO' },
   { value: 'meeting_agendado', label: 'Meeting Agendado', temp: 'MORNO'      },
   { value: 'call_agendada',    label: 'Call Agendada',    temp: 'MORNO'      },
   { value: 'call_realizado',   label: 'Call Realizado',   temp: 'MORNO'      },
@@ -129,7 +130,17 @@ function BotaoEnviarMaterial({ lead, telLimpo, materiais, empreendimentoId }) {
 
 // Botão compacto de ação do cabeçalho (Ligar/WhatsApp/E-mail) — mesmo
 // visual dos três, só muda cor/ícone/href.
-function BotaoAcaoHeader({ href, icon, label, cor, corRgb, alvo }) {
+function BotaoAcaoHeader({ href, icon, label, cor, corRgb, alvo, bloqueado = false, aviso }) {
+  if (bloqueado) {
+    return (
+      <button type="button" disabled title={aviso} aria-label={`${label}: ${aviso}`}
+        className="flex items-center gap-1.5 px-3 text-xs font-semibold"
+        style={{ minHeight: '34px', background: 'rgba(var(--ink-rgb), 0.04)', color: 'var(--text-faint)', border: '1px solid rgba(var(--ink-rgb), 0.12)', borderRadius: '2px', cursor: 'not-allowed' }}>
+        <i className="ti ti-lock text-[15px]" aria-hidden="true" />
+        {label}
+      </button>
+    );
+  }
   return (
     <a href={href} target={alvo} rel={alvo ? 'noopener noreferrer' : undefined}
       className="flex items-center gap-1.5 px-3 text-xs font-semibold transition-colors"
@@ -206,6 +217,9 @@ export default function LeadDetalhe() {
 
   const isCorretorResponsavel = usuario?.perfil === 'corretor' && lead?.corretorId === usuario?.id;
   const podeEscrever = isCorretorResponsavel;
+  // O corretor só liga, chama no WhatsApp ou registra contato depois de comentar no lead (o backend também confere).
+  const precisaComentarAntes = isCorretorResponsavel && !comentarios.some((c) => c.autorId === usuario?.id);
+  const AVISO_COMENTE_ANTES = 'Registre um comentário antes de entrar em contato';
   const podeEditarDados = isCorretorResponsavel || usuario?.perfil === 'editor';
   const podeEditarTarefa = ['corretor', 'gerente', 'editor'].includes(usuario?.perfil);
 
@@ -565,14 +579,19 @@ export default function LeadDetalhe() {
                     botão pra tel:undefined seria enganoso, não só feio. */}
                 {!lead.contatoOculto && lead.telefone && (
                   <>
-                    <BotaoAcaoHeader href={`tel:${telLimpo}`} icon="phone" label="Ligar" cor="var(--accent-hover)" corRgb="var(--accent-rgb)" />
-                    <BotaoAcaoHeader href={`https://wa.me/${numeroWhatsapp(telLimpo)}`} icon="brand-whatsapp" label="WhatsApp" cor="var(--success)" corRgb="var(--success-rgb)" alvo="_blank" />
+                    <BotaoAcaoHeader href={`tel:${telLimpo}`} icon="phone" label="Ligar" cor="var(--accent-hover)" corRgb="var(--accent-rgb)" bloqueado={precisaComentarAntes} aviso={AVISO_COMENTE_ANTES} />
+                    <BotaoAcaoHeader href={`https://wa.me/${numeroWhatsapp(telLimpo)}`} icon="brand-whatsapp" label="WhatsApp" cor="var(--success)" corRgb="var(--success-rgb)" bloqueado={precisaComentarAntes} aviso={AVISO_COMENTE_ANTES} alvo="_blank" />
                   </>
+                )}
+                {precisaComentarAntes && !lead.contatoOculto && lead.telefone && (
+                  <p className="w-full text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                    <i className="ti ti-lock text-[12px]" aria-hidden="true" /> {AVISO_COMENTE_ANTES}.
+                  </p>
                 )}
                 {!lead.contatoOculto && lead.email && (
                   <BotaoAcaoHeader href={`mailto:${lead.email}`} icon="mail" label="E-mail" cor="var(--text-secondary)" corRgb="var(--ink-rgb)" />
                 )}
-                {podeEscrever && materiaisEmpreendimento.length > 0 && (
+                {podeEscrever && !precisaComentarAntes && materiaisEmpreendimento.length > 0 && (
                   <BotaoEnviarMaterial lead={lead} telLimpo={telLimpo} materiais={materiaisEmpreendimento} empreendimentoId={lead.empreendimentoId} />
                 )}
               </div>
@@ -742,7 +761,7 @@ export default function LeadDetalhe() {
 
                 <div className={`grid gap-2 ${lead.primeiroContatoEm ? 'grid-cols-2' : 'grid-cols-3'}`}>
                   {!lead.primeiroContatoEm && (
-                    <button onClick={registrarContato} disabled={registrandoContato} className="text-xs font-medium py-2 rounded flex items-center justify-center gap-1.5"
+                    <button onClick={registrarContato} disabled={registrandoContato || precisaComentarAntes} title={precisaComentarAntes ? AVISO_COMENTE_ANTES : undefined} className="text-xs font-medium py-2 rounded flex items-center justify-center gap-1.5"
                       style={{ background: 'rgba(var(--amber-rgb), 0.10)', color: 'var(--amber)', border: '1px solid rgba(var(--amber-rgb), 0.3)' }}>
                       <i className="ti ti-phone-check text-[14px]" aria-hidden="true" />
                       {registrandoContato ? '...' : 'Contato'}

@@ -16,7 +16,7 @@ import { textoInteracao, dataCompleta, ultimaInteracaoDe } from '../utils/intera
 const AGUARDANDO = 'aguardando_atendimento';
 
 const STAGES_BASE = [
-  'tentando_contato', 'material_enviado', 'sem_resposta',
+  'tentando_contato', 'material_enviado', 'sem_resposta', 'tentando_agendar_visita',
   'meeting_agendado', 'call_agendada', 'call_realizado', 'visita_agendada',
   'visita_nao_realizada', 'visita_realizada', 'retorno', 'proposta', 'venda_finalizada',
 ];

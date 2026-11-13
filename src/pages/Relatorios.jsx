@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import RelatorioDescarte from '../components/RelatorioDescarte';
+import RelatorioFunil from '../components/RelatorioFunil';
 
 // Modelo atual de 7 estágios (leadService.js). 'venda_finalizada' é a única
 // etapa que corresponde ao antigo 'fechado'; o antigo 'perdido' não é mais um
@@ -110,6 +111,7 @@ export default function Relatorios() {
         </div>
       </div>
 
+      <RelatorioFunil />
       <RelatorioDescarte />
     </div>
   );
