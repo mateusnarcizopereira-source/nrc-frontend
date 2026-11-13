@@ -47,7 +47,7 @@ const PODE_CORRETORES = ['gerente', 'editor'];
 // Radar.jsx, igual ao padrão de Empreendimentos.jsx/podeEditar).
 const PODE_RADAR = ['corretor', 'gerente', 'diretor', 'editor'];
 
-function Privado({ children, perfilMinimo, perfisPermitidos, bloqueados }) {
+function Privado({ children, perfilMinimo, perfisPermitidos, bloqueados, semListaDeEmpreendimentos }) {
   const { usuario, carregando, temPerfil } = useAuth();
   if (carregando) return <div className="h-screen flex items-center justify-center"><Spinner /></div>;
   if (!usuario) return <Navigate to="/login" replace />;
@@ -56,6 +56,7 @@ function Privado({ children, perfilMinimo, perfisPermitidos, bloqueados }) {
   // um perfil "acima" passar indevidamente (ex.: diretor em rota de gerente).
   if (perfisPermitidos && !perfisPermitidos.includes(usuario.perfil)) return <Navigate to="/" replace />;
   if (bloqueados && bloqueados.includes(usuario.perfil)) return <Navigate to="/" replace />;
+  if (semListaDeEmpreendimentos && Array.isArray(usuario.empreendimentosAtendidos)) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -92,10 +93,10 @@ export default function App() {
               <Route path="notificacoes" element={<Notificacoes />} />
               <Route path="relatorios" element={<Privado perfilMinimo="gerente"><Relatorios /></Privado>} />
               <Route path="god" element={<Privado perfilMinimo="editor"><GodPainel /></Privado>} />
-              <Route path="clientes" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Clientes /></Privado>} />
-              <Route path="clientes/:id" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><ClienteDetalhe /></Privado>} />
-              <Route path="campanhas" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><Campanhas /></Privado>} />
-              <Route path="campanhas/:id/discador" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS}><CampanhaDiscador /></Privado>} />
+              <Route path="clientes" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS} semListaDeEmpreendimentos><Clientes /></Privado>} />
+              <Route path="clientes/:id" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS} semListaDeEmpreendimentos><ClienteDetalhe /></Privado>} />
+              <Route path="campanhas" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS} semListaDeEmpreendimentos><Campanhas /></Privado>} />
+              <Route path="campanhas/:id/discador" element={<Privado perfisPermitidos={PODE_CLIENTES_CAMPANHAS} semListaDeEmpreendimentos><CampanhaDiscador /></Privado>} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -97,7 +97,8 @@ function itensNav({ modoSolo, usuario, temPerfil, tarefasAtrasadas }) {
   // Allow-list — mesma lista do backend (exigirPerfis) e do App.jsx (perfisPermitidos).
   // Sempre lado a lado agora — corretor/gerente perderam o Mais, editor já
   // não agrupava isso.
-  if (['corretor', 'gerente', 'editor'].includes(perfil)) {
+  // Corretor com empreendimentosAtendidos não acessa: o backend também recusa.
+  if (['corretor', 'gerente', 'editor'].includes(perfil) && !Array.isArray(usuario?.empreendimentosAtendidos)) {
     itens.push({ to: '/clientes', icon: 'address-book', label: 'Clientes', grupo: null });
     itens.push({ to: '/campanhas', icon: 'speakerphone', label: 'Oferta Ativa', grupo: null });
   }
