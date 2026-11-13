@@ -1,4 +1,5 @@
 import { io } from 'socket.io-client';
+import api from './api';
 
 // Deriva a ORIGEM do backend a partir do VITE_API_URL, tirando o sufixo "/api".
 // Ex.: https://nrc-backend-e9en.onrender.com/api  ->  https://nrc-backend-e9en.onrender.com
@@ -14,6 +15,13 @@ function backendOrigin() {
 
 let socket = null;
 let usuarioIdAtual = null;
+const TEMPO_NOVA_TENTATIVA_MS = 15000;
+
+// O servidor derrubou ou recusou a conexão: se o login venceu, a API responde 401 e leva para a tela de login. Sem isso, a tela
+// ficaria aberta parecendo normal, sem receber mais nada em tempo real.
+function conferirLogin() {
+  api.get('/auth/me').catch(() => {});
+}
 
 export function conectarSocket(usuarioId) {
   if (usuarioId != null) usuarioIdAtual = String(usuarioId);
@@ -32,15 +40,27 @@ export function conectarSocket(usuarioId) {
     reconnectionDelay: 1000,
     reconnectionDelayMax: 10000,          // tenta ~a cada 10s até reconectar
     timeout: 20000,
+    // O servidor só aceita conexão com login, e decide sozinho as salas. Função, não valor: lê o token a cada tentativa.
+    auth: (cb) => cb({ token: localStorage.getItem('nrc_token') }),
   });
 
-  // (Re)entra na room do usuário a CADA conexão — inclusive depois de uma reconexão,
-  // porque o Socket.io recria o socket e as rooms se perdem ao reconectar.
+  // Transição: o backend anterior ainda precisa deste aviso para entrar na sala; o novo ignora. Sai depois da publicação.
   socket.on('connect', () => {
     console.log('[Socket] Conectado', socket.id);
     if (usuarioIdAtual) socket.emit('join_room', usuarioIdAtual);
   });
-  socket.on('disconnect', (motivo) => console.log('[Socket] Desconectado:', motivo));
+  // Quando o servidor recusa a conexão, o Socket.io não tenta de novo sozinho. Login inválido fica assim (a API leva para a
+  // tela de login); falha passageira do servidor tenta de novo.
+  socket.on('connect_error', (erro) => {
+    console.log('[Socket] Não conectou:', erro.message);
+    if (erro.message === 'nao_autorizado') { conferirLogin(); return; }
+    if (socket.active) return;
+    setTimeout(() => { if (socket && !socket.connected) socket.connect(); }, TEMPO_NOVA_TENTATIVA_MS);
+  });
+  socket.on('disconnect', (motivo) => {
+    console.log('[Socket] Desconectado:', motivo);
+    if (motivo === 'io server disconnect') conferirLogin();
+  });
   socket.io.on('reconnect', (n) => console.log('[Socket] Reconectado após', n, 'tentativa(s)'));
 
   return socket;

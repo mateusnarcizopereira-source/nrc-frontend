@@ -6,6 +6,7 @@ import { conectarSocket } from '../services/socket';
 import api from '../services/api';
 import BadgeStatus from '../components/BadgeStatus';
 import { GraficoFunil, GraficoOrigem } from '../components/DashboardCharts';
+import { aplicarLeadNovo, aplicarLeadAtualizado } from '../utils/leadsTempoReal';
 import { dentroDaJanelaCheckin, checkinAindaNaoAbriu } from '../utils/janelaFila';
 import { contaComoVisita } from '../utils/estagios';
 
@@ -98,15 +99,17 @@ export default function Dashboard() {
   useEffect(() => {
     carregarDados();
     const socket = conectarSocket();
-    socket.on('lead_novo',        (lead) => setLeads((prev) => [lead, ...prev]));
-    socket.on('lead_atualizado',  (lead) => setLeads((prev) => prev.map((l) => l.id === lead.id ? lead : l)));
+    socket.on('lead_novo',        (lead) => setLeads((prev) => aplicarLeadNovo(prev, lead, usuario)));
+    socket.on('lead_atualizado',  (lead) => setLeads((prev) => aplicarLeadAtualizado(prev, lead, usuario)));
+    socket.on('lead_atribuido',   (lead) => setLeads((prev) => aplicarLeadAtualizado(prev, lead, usuario)));
     socket.on('sorteio_realizado', () => carregarFila());
     return () => {
       socket.off('lead_novo');
       socket.off('lead_atualizado');
+      socket.off('lead_atribuido');
       socket.off('sorteio_realizado');
     };
-  }, []);
+  }, [usuario?.id, usuario?.perfil]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Carrega visitas para o dashboard solo
   useEffect(() => {
