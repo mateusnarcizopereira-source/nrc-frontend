@@ -19,6 +19,11 @@ function Tabela({ dados }) {
       <div className="flex items-center justify-between text-sm pt-1.5" style={{ borderTop: '1px solid rgba(var(--ink-rgb), 0.08)', color: 'var(--text)' }}>
         <span className="font-semibold">Total do dia</span><b>{dados.total}</b>
       </div>
+      {/* Retornos: clientes que já tinham lead e preencheram de novo. Não entram no total nem no relatório copiado. */}
+      <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
+        <span>Retornos (cliente que já era lead){dados.retornos?.porConstrutora?.length ? `: ${dados.retornos.porConstrutora.map((c) => `${c.construtora} ${c.leads}`).join(' · ')}` : ''}</span>
+        <b>{dados.retornos?.total ?? 0}</b>
+      </div>
     </div>
   );
 }

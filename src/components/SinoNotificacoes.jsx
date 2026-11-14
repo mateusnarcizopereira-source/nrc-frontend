@@ -6,6 +6,7 @@ import { filtrarPorGrupo } from '../utils/notificacoes';
 const ICONE = {
   lead_novo:       'user-plus',
   lead_repassado:  'arrows-exchange', // lead repassado por falta de atendimento (sem som)
+  lead_retorno:    'repeat',          // quem já era lead preencheu o formulário de novo
   sorteio:         'ticket',
   tarefa_vencendo: 'clock-exclamation',
   tarefa_atrasada: 'alarm',

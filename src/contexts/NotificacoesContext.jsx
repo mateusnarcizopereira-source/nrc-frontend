@@ -8,7 +8,7 @@ import { contarDaLista, contadoresAposNova, contadoresAposLida, CONTADORES_ZERO 
 
 const Ctx = createContext(null);
 
-const TIPOS_COM_SOM = new Set(['lead_novo', 'sorteio']); // só estes tocam som
+const TIPOS_COM_SOM = new Set(['lead_novo', 'lead_retorno', 'sorteio']); // só estes tocam som
 const SOM_KEY = 'nrc_som_notif';
 
 // Som curto e discreto sintetizado (evita depender de arquivo binário).

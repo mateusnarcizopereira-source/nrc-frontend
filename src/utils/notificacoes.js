@@ -1,6 +1,6 @@
 // Regras puras do sino: separar o aviso de LEAD (lead novo / lead repassado) das demais notificações e manter os
 // contadores. O número vermelho do sino conta só os leads; o total fica como contador secundário.
-export const TIPOS_LEAD = ['lead_novo', 'lead_repassado'];
+export const TIPOS_LEAD = ['lead_novo', 'lead_repassado', 'lead_retorno'];
 
 export const ehLead = (tipo) => TIPOS_LEAD.includes(tipo);
 
