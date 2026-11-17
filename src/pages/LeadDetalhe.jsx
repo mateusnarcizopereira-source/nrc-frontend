@@ -9,6 +9,7 @@ import TarefaCard from '../components/TarefaCard';
 import { TarefaFormModal, ConcluirTarefaModal } from '../components/TarefaModais';
 import { numeroWhatsapp } from '../utils/whatsapp';
 import ContatoOculto from '../components/ContatoOculto';
+import ResultadoVisita, { podeMarcarVisita } from '../components/ResultadoVisita';
 import { textoAlerta, corAlerta } from '../utils/alertaLead';
 import { dataCompleta, ultimaInteracaoDe, rotuloInteracao } from '../utils/interacao';
 
@@ -934,6 +935,12 @@ export default function LeadDetalhe() {
                               <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Visita · {entry.item.empreendimento}</p>
                               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{entry.item.hora} · Gerente: {entry.item.gerenteNome}</p>
                               {entry.item.comentario && <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{entry.item.comentario}</p>}
+                              <ResultadoVisita visita={entry.item} podeMarcar={podeMarcarVisita(usuario, lead.corretorId)}
+                                onMarcado={(r) => {
+                                  setVisitas((vs) => vs.map((v) => (v.id === r.visita.id ? r.visita : v)));
+                                  recarregarLead();
+                                  api.get(`/leads/${id}/comentarios`).then((c) => setComentarios(c.data)).catch(() => {}); // o registro do resultado na linha do tempo
+                                }} />
                             </div>
                           </div>
                         </div>

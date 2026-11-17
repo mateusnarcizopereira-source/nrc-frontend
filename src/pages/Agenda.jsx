@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import ResultadoVisita, { podeMarcarVisita } from '../components/ResultadoVisita';
 
 // Categorias de evento (ajuste Fase 1, item 7) — mesma paleta de cores usada
 // nos badges de status (item 3). Visitas cadastradas viram categoria "visita";
@@ -43,7 +44,7 @@ export default function Agenda() {
   const eventos = useMemo(() => {
     const deVisitas = visitas.map((v) => ({
       id: `v_${v.id}`, data: v.data, hora: v.hora, categoria: 'visita',
-      titulo: `Visita — ${v.empreendimento}`, leadNome: v.leadNome, leadId: v.leadId, empreendimento: v.empreendimento,
+      titulo: `Visita — ${v.empreendimento}`, leadNome: v.leadNome, leadId: v.leadId, empreendimento: v.empreendimento, visita: v,
     }));
     const deTarefas = tarefas.map((t) => {
       const dt = new Date(t.dataHora);
@@ -200,6 +201,10 @@ export default function Agenda() {
                       <p className="text-sm font-medium mt-0.5 truncate" style={{ color: 'var(--text)' }}>{e.leadNome || e.titulo}</p>
                       {e.empreendimento && (
                         <p className="text-xs truncate" style={{ color: 'var(--accent)' }}>{e.empreendimento}</p>
+                      )}
+                      {e.visita && (
+                        <ResultadoVisita visita={e.visita} podeMarcar={podeMarcarVisita(usuario, e.visita.corretorId)}
+                          onMarcado={(r) => setVisitas((vs) => vs.map((x) => (x.id === r.visita.id ? r.visita : x)))} />
                       )}
                     </div>
                   </div>

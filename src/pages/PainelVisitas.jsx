@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import ResultadoVisita from '../components/ResultadoVisita';
 
 export default function PainelVisitas() {
   const [visitas, setVisitas] = useState([]);
+  const { usuario } = useAuth();
+  // Gerente e editor marcam o resultado; diretor só visualiza.
+  const podeMarcar = ['gerente', 'editor'].includes(usuario?.perfil);
+  const aoMarcar = (v) => setVisitas((vs) => vs.map((x) => (x.id === v.id ? v : x)));
   const [carregando, setCarregando] = useState(true);
   const [busca, setBusca] = useState('');
 
@@ -43,15 +49,15 @@ export default function PainelVisitas() {
         </div>
       ) : (
         <>
-          <Section titulo={`Próximas (${proximas.length})`} visitas={proximas} futuro />
-          <Section titulo={`Realizadas (${passadas.length})`} visitas={passadas} />
+          <Section titulo={`Próximas (${proximas.length})`} visitas={proximas} futuro podeMarcar={podeMarcar} onMarcado={aoMarcar} />
+          <Section titulo={`Anteriores (${passadas.length})`} visitas={passadas} podeMarcar={podeMarcar} onMarcado={aoMarcar} />
         </>
       )}
     </div>
   );
 }
 
-function Section({ titulo, visitas, futuro = false }) {
+function Section({ titulo, visitas, futuro = false, podeMarcar = false, onMarcado }) {
   if (visitas.length === 0) return null;
   return (
     <div>
@@ -115,6 +121,7 @@ function Section({ titulo, visitas, futuro = false }) {
               {v.comentario && (
                 <p className="text-xs mt-1.5 italic" style={{ color: 'var(--text-muted)' }}>{v.comentario}</p>
               )}
+              <ResultadoVisita visita={v} podeMarcar={podeMarcar} onMarcado={(r) => onMarcado?.(r.visita)} />
             </div>
           </div>
         ))}
