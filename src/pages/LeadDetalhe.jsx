@@ -5,13 +5,22 @@ import api from '../services/api';
 import { useConfig } from '../contexts/ConfigContext';
 import BadgeStatus from '../components/BadgeStatus';
 import Avatar from '../components/Avatar';
-import SeletorEmpreendimento from '../components/SeletorEmpreendimento';
 import TarefaCard from '../components/TarefaCard';
 import { TarefaFormModal, ConcluirTarefaModal } from '../components/TarefaModais';
 import { numeroWhatsapp } from '../utils/whatsapp';
 import ContatoOculto from '../components/ContatoOculto';
 import { textoAlerta, corAlerta } from '../utils/alertaLead';
 import { dataCompleta, ultimaInteracaoDe, rotuloInteracao } from '../utils/interacao';
+
+// Cadastro de visita: um empreendimento do CRM ou "Outro" (nome digitado, sem vínculo).
+const OUTRO = '__outro__';
+const VISITA_VAZIA = { data: '', hora: '', empreendimentoId: '', outroNome: '', comentario: '', gerenteId: '' };
+export function corpoDaVisita(form, empreendimentos) {
+  const base = { data: form.data, hora: form.hora, comentario: form.comentario, gerenteId: form.gerenteId };
+  if (form.empreendimentoId === OUTRO) return { ...base, empreendimentoOutro: true, empreendimento: form.outroNome.trim() };
+  const emp = empreendimentos.find((e) => e.id === form.empreendimentoId);
+  return { ...base, empreendimentoId: form.empreendimentoId, empreendimento: emp?.nome || '' };
+}
 
 const TEMPERATURA_OPCOES = [
   { value: 'tentando_contato', label: 'Tentando Contato', temp: 'FRIO'       },
@@ -186,7 +195,7 @@ export default function LeadDetalhe() {
 
   const [visitas, setVisitas] = useState([]);
   const [gerentes, setGerentes] = useState([]);
-  const [visitaForm, setVisitaForm] = useState({ data: '', hora: '', empreendimento: '', comentario: '', gerenteId: '' });
+  const [visitaForm, setVisitaForm] = useState(VISITA_VAZIA);
   const [cadastrandoVisita, setCadastrandoVisita] = useState(false);
   const [modalVisita, setModalVisita] = useState(false);
   const [registrandoContato, setRegistrandoContato] = useState(false);
@@ -387,10 +396,10 @@ export default function LeadDetalhe() {
     if (!podeEscrever) return;
     setCadastrandoVisita(true);
     try {
-      const res = await api.post(`/leads/${id}/visitas`, visitaForm);
+      const res = await api.post(`/leads/${id}/visitas`, corpoDaVisita(visitaForm, empreendimentos));
       setVisitas([res.data, ...visitas]);
       atualizarSeTarefaAutomaticaPendente();
-      setVisitaForm({ data: '', hora: '', empreendimento: '', comentario: '', gerenteId: '' });
+      setVisitaForm(VISITA_VAZIA);
       setModalVisita(false);
     } catch (e) {
       // o modal continua aberto com os dados preenchidos (nada foi gravado): dá para corrigir e tentar de novo;
@@ -956,13 +965,21 @@ export default function LeadDetalhe() {
               </div>
               <div>
                 <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Empreendimento</label>
-                <SeletorEmpreendimento
-                  value={visitaForm.empreendimento}
-                  onChange={(nome) => setVisitaForm({ ...visitaForm, empreendimento: nome })}
-                  podeCriar={['gerente', 'editor'].includes(usuario?.perfil)}
-                  placeholder="Buscar ou digitar empreendimento..."
-                />
+                <select className="input" value={visitaForm.empreendimentoId} required aria-label="Empreendimento da visita"
+                  onChange={(e) => setVisitaForm({ ...visitaForm, empreendimentoId: e.target.value, outroNome: e.target.value === OUTRO ? visitaForm.outroNome : '' })}>
+                  <option value="">Selecionar empreendimento...</option>
+                  {empreendimentos.map((emp) => <option key={emp.id} value={emp.id}>{emp.nome}</option>)}
+                  <option value={OUTRO}>Outro</option>
+                </select>
               </div>
+              {/* "Outro": empreendimento que não está no CRM. Grava só o nome, sem criar empreendimento nem mudar o do lead. */}
+              {visitaForm.empreendimentoId === OUTRO && (
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Especifique o empreendimento</label>
+                  <input className="input" required maxLength={120} placeholder="Nome do empreendimento" value={visitaForm.outroNome}
+                    onChange={(e) => setVisitaForm({ ...visitaForm, outroNome: e.target.value })} />
+                </div>
+              )}
               <div>
                 <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Gerente da visita</label>
                 <select className="input" value={visitaForm.gerenteId} onChange={(e) => setVisitaForm({ ...visitaForm, gerenteId: e.target.value })} required>
