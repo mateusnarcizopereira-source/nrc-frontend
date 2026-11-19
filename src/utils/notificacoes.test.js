@@ -56,3 +56,11 @@ test('o sino só mostra os campos que a notificação já tinha (título, mensag
   const s = readFileSync(join(SRC, 'components/SinoNotificacoes.jsx'), 'utf8');
   assert.doesNotMatch(s, /telefone|\.email|lead\.nome|cliente/i);
 });
+
+test('aviso de prazo (lead roda em 5 min): conta como lead, tem ícone e toca som', () => {
+  assert.equal(ehLead('lead_prazo'), true);
+  const sino = readFileSync(join(SRC, 'components/SinoNotificacoes.jsx'), 'utf8');
+  assert.match(sino, /lead_prazo:\s+'hourglass-high'/);
+  const ctx = readFileSync(join(SRC, 'contexts/NotificacoesContext.jsx'), 'utf8');
+  assert.match(ctx, /TIPOS_COM_SOM = new Set\(\[[^\]]*'lead_prazo'/);
+});
